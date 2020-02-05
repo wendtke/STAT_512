@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  5 FEB 2020 12:51
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  5 FEB 2020 13:05
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1171,7 +1171,7 @@ texlive/2017/texmf-dist/fonts/type1/public/lm/lmr17.pfb></usr/local/texlive/201
 e1/public/lm/lmtk10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/
 lm/lmtt10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/lm/lmtti10
 .pfb>
-Output written on Wendt_512_HW2.pdf (4 pages, 224658 bytes).
+Output written on Wendt_512_HW2.pdf (4 pages, 224630 bytes).
 PDF statistics:
  154 PDF objects out of 1000 (max. 8388607)
  136 compressed objects within 2 object streams

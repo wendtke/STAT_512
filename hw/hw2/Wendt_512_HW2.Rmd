@@ -66,7 +66,7 @@ GGally::ggpairs(fat_data, columns = c("body_fat", "triceps", "thigh", "midarm"))
 Fit the “full” model using BodyFat as the response and including all 3 predictors. Include the parameter estimate information (“Coefficients” table) and R2 value for the full model in your assignment. Questions 3 through 5 are based on the “full” model from question 2.
 
 ```{r fat_multreg}
-# 4. multiple regression with far data
+# 2. multiple regression with far data
 fat_multreg <- lm(body_fat ~ triceps + thigh + midarm, data = fat_data)
 summary(fat_multreg)
 ```
@@ -74,7 +74,7 @@ summary(fat_multreg)
 The $R^2$ value for the multiple linear regression of triceps, thigh, and midarm measurements (X) on body fat percentage (Y) is 0.8014. See below for table of coefficient estimates and corresponding p-values.
 
 ```{r fat_multreg_tidy}
-# 4. create tidy lm df and table
+# 2. create tidy lm df and table
 fat_multreg_tidy <- broom::tidy(fat_multreg)
 kableExtra::kable(fat_multreg_tidy)
 ```
