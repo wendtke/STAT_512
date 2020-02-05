@@ -150,9 +150,13 @@ plot(cow_multreg)
 ```
 
 Assumptions:
+
 - *Independence*: Unknown. Study design and experimentation are not described.
+
 - *Linearity*: Assumed. The plot of residuals vs. fitted values does not show a trend (e.g., "megaphone" pattern) in residuals.
+
 - *Equal variance*: Assumed. The plot of residuals vs. fitted values shows equal scatter among residuals.
+
 - *Normality*: Assumed/acceptable. The Q-Q plot indicates an acceptable pattern of standardized residuals, considering the small sample size. 
 
 # Question 7: Interpretation (R^2)
@@ -165,7 +169,7 @@ The $R^2$ value of the full multiple regression model indicates that 90.07% of t
 
 Give a one-sentence interpretation of estimated partial regression coefficient for AntiBio in the multiple regression.
 
-For every one-unit increase in antibiotics in cattle feed, there is a four-day decrease in time to market weight, holding all other variables (i.e., protein, supplements) constant.
+For every one-unit increase in antibiotic content in cattle feed, there is an estimated four-day decrease in time to market weight, holding all other variables (i.e., protein, supplements) constant.
 
 # Question 9: Hypothesis tests (betas)
 
@@ -186,7 +190,7 @@ Hypothesis tests of $\beta$ = 0 (null) vs. $\beta$ not 0 (alternative):
 
 # Question 10: Hypothesis test (protein)
 
-Working from the “full” model, test the null hypothesis that the partial regression coefficient for Protein equals -3.0 versus a two-sided alternative. In other words, test H0: beta1 is -3 versus HA: beta1 is not -3. Give a test statistic, p-value and conclusion. (4 pts) 
+Working from the “full” model, test the null hypothesis that the partial regression coefficient for Protein equals -3.0 versus a two-sided alternative. In other words, test $H_0$: $\beta$ = -3 vs. $H_A$: $\beta$ $\neq$ -3. Give a test statistic, p-value and conclusion. (4 pts) 
 
 _Note_: One approach to this question uses the car package. Remember you need to install a package the first time you use it and load the package every time you use it!
 
@@ -196,7 +200,7 @@ protein_matrix <- c(0, 1, 0, 0)
 protein_alt <- broom::tidy(car::lht(cow_multreg, protein_matrix, rhs = -3.0))
 ```
 
-We reject the null hypothesis that the partial regression coefficient for protein is equal to -3. There is evidence to suggest it is not equal to -3, _F_ = `r protein_alt$statistic[2]`, _p_ = `r protein_alt$p.value[2]`. 
+We reject the null hypothesis that the partial regression coefficient for protein is equal to -3. There is evidence to suggest it is not equal to -3, _F_ = `r protein_alt$statistic[2]`, _p_ = `r protein_alt$p.value[2]` < $\alpha$ = 0.05. 
 
 \newpage
 
