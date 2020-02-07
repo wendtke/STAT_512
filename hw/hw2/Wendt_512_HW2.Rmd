@@ -66,7 +66,7 @@ GGally::ggpairs(fat_data, columns = c("body_fat", "triceps", "thigh", "midarm"))
 Fit the “full” model using BodyFat as the response and including all 3 predictors. Include the parameter estimate information (“Coefficients” table) and R2 value for the full model in your assignment. Questions 3 through 5 are based on the “full” model from question 2.
 
 ```{r fat_multreg}
-# 2. multiple regression with far data
+# 2. multiple regression with fat data
 fat_multreg <- lm(body_fat ~ triceps + thigh + midarm, data = fat_data)
 summary(fat_multreg)
 ```
@@ -83,17 +83,28 @@ kableExtra::kable(fat_multreg_tidy)
 
 Based on the “full” model, give 95% confidence intervals for each of the four betas (intercept and three partial regression coefficients).
 
-## Intercept
-
-## Triceps
-
-## Thigh
-
-## Midarm
+```{r fat_multreg_ci}
+# 3. calculate ci for each beta
+fat_multreg %>% 
+  confint(level = 0.95) %>% 
+  broom::tidy() %>% 
+  kableExtra::kable()
+```
 
 # Question 4: Hypothesis tests (betas)
 
 Based on the “full” model, test the null hypothesis that all three of the partial regression coefficients are simultaneously zero. In other words, test H0: beta1 = beta2 = beta3 = 0. Give the F-statistic and p-value and make a conclusion about the test. (4 pts)
+
+```{r}
+# 4. test if betas 1,2,3 are 0
+fat_matrix <- matrix(c(0, 1, 0, 0,
+                       0, 0, 1, 0,
+                       0, 0, 0, 1,
+                       nrow = 3, 
+                       byrow = TRUE))
+car::lht(fat_multreg, 
+         fat_matrix)
+```
 
 # Question 5:  Hypothesis tests (betas)
 
