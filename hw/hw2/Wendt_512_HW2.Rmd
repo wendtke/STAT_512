@@ -98,11 +98,11 @@ Based on the “full” model, test the null hypothesis that all three of the pa
 ```{r fat_betas_all}
 # 4. test if tricep, thigh, midarm coeffs are 0
 fat_matrix_q4 <- matrix(c(0, 1, 0, 0,
-                       0, 0, 1, 0,
-                       0, 0, 0, 1),
-                     nrow = 3,
-                     ncol = 4,
-                     byrow = TRUE)
+                          0, 0, 1, 0,
+                          0, 0, 0, 1),
+                        nrow = 3,
+                        ncol = 4,
+                        byrow = TRUE)
 fat_betas_q4 <- broom::tidy(car::lht(fat_multreg, 
                                   fat_matrix_q4, 
                                   rhs = c(0, 0, 0)))
