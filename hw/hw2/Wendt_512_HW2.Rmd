@@ -166,9 +166,9 @@ Assumptions:
 
 - *Independence*: Unknown. Study design and experimentation are not described in great detail.
 
-- *Linearity*: Assumed. The plot of residuals vs. fitted values does not show a trend (e.g., "megaphone" pattern) in residuals.
+- *Linearity*: Assumed. The plot of residuals vs. fitted values does not show a trend (bow or curve) in residuals.
 
-- *Equal variance*: Assumed. The plot of residuals vs. fitted values shows equal scatter among residuals.
+- *Equal variance*: Assumed. The plot of residuals vs. fitted values shows equal scatter (no megaphone or fanning pattern) among residuals.
 
 - *Normality*: Assumed. The Q-Q plot indicates the the standardized residuals adhered fairly well to the line.
 

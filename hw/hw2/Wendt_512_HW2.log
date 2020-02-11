@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  10 FEB 2020 11:53
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  11 FEB 2020 11:53
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1135,46 +1135,46 @@ LaTeX Font Info:    Try loading font information for TS1+lmtt on input line 301
 File: ts1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
 ) [3] [4]
 
-Package xcolor Warning: Incompatible color definition on input line 406.
+Package xcolor Warning: Incompatible color definition on input line 407.
 
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 409.
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 410.
 
-Package xcolor Warning: Incompatible color definition on input line 489.
-
-
-Package xcolor Warning: Incompatible color definition on input line 489.
+Package xcolor Warning: Incompatible color definition on input line 490.
 
 
-Underfull \vbox (badness 1189) detected at line 489
+Package xcolor Warning: Incompatible color definition on input line 490.
+
+
+Underfull \vbox (badness 1189) detected at line 490
  []
 
 
-Package xcolor Warning: Incompatible color definition on input line 489.
+Package xcolor Warning: Incompatible color definition on input line 490.
 
 [5]
 
-Package xcolor Warning: Incompatible color definition on input line 489.
+Package xcolor Warning: Incompatible color definition on input line 490.
 
 
-Package xcolor Warning: Incompatible color definition on input line 489.
+Package xcolor Warning: Incompatible color definition on input line 490.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 491.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 492.
 [6]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 491.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 492.
 (./Wendt_512_HW2.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 491.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 491.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 492.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 492.
 Package rerunfilecheck Info: File `Wendt_512_HW2.out' has not changed.
 (rerunfilecheck)             Checksum: 9BADC32F898325AD336A60752C291C76;2311.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 491.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 492.
  ) 
 Here is how much of TeX's memory you used:
- 14763 strings out of 492995
- 213002 string characters out of 6132704
+ 14761 strings out of 492995
+ 212980 string characters out of 6132704
  334476 words of memory out of 5000000
  17984 multiletter control sequences out of 15000+600000
- 52056 words of font info for 84 fonts, out of 8000000 for 9000
+ 51973 words of font info for 83 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  34i,7n,38p,377b,457s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2017/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/local/
@@ -1192,7 +1192,7 @@ lm/lmsy10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/lm/lmsy7.p
 fb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/lm/lmtk10.pfb></usr/l
 ocal/texlive/2017/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></usr/local/texli
 ve/2017/texmf-dist/fonts/type1/public/lm/lmtti10.pfb>
-Output written on Wendt_512_HW2.pdf (6 pages, 247131 bytes).
+Output written on Wendt_512_HW2.pdf (6 pages, 247173 bytes).
 PDF statistics:
  154 PDF objects out of 1000 (max. 8388607)
  132 compressed objects within 2 object streams
