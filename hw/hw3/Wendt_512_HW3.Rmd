@@ -1,0 +1,209 @@
+---
+title: "STAT 512 Homework 3"
+author: "Kathleen Wendt"
+date: "02/18/2020"
+output: pdf_document
+---
+
+```{r packages, include = FALSE}
+# load packages
+library(tidyverse)
+library(janitor)
+library(GGally)
+library(broom)
+library(car)
+```
+
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(fig.width = 6, 
+                      fig.height = 4, 
+                      fig.path = "figs/",
+                      echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+Questions 1 through 6 (Grain Yield): Data relating grain Yield (Y) to the number of Days (X) after flowering that harvesting took place was examined in “Determination of Biological Maturity and Effect of Harvesting and Drying Conditions on Milling Quality of Paddy” (J of Ag Engr. Research (1975):353-361.) The data is available from Canvas as “Grain.csv”.
+
+Notes:
+
+- For consistency, please use the `I()` or `poly( , raw = TRUE)` functions for fitting the quadratic and cubic models.
+
+- For questions 2-4, you do NOT need to include the diagnostic plots in your assignment. Just discuss your findings.
+
+```{r grain_data}
+# read grain data
+grain_data <- readr::read_csv("data/Grain.csv") %>% janitor::clean_names()
+```
+
+# Question 1: Scatterplot
+
+Create a scatterplot of Yield vs Days. Include this plot in your assignment.
+
+```{r grain_plot}
+# 1. pairwise plot (base) for grain data
+plot(grain_data)
+```
+
+```{r grain_pairs}
+# 1. pairwise plot (gg) for grain data
+GGally::ggpairs(grain_data, columns = c("days", "yield"))
+```
+
+# Question 2: Simple linear regression
+
+Fit a linear regression model of Yield on Days. Include the parameter estimate information (“Coefficients” table) in your assignment. Examine a plot of the residuals versus predicted values. What does the residual plot suggest? (4 pts)
+
+```{r grain_lm}
+# 2. simple linear regression with grain data
+grain_lm <- lm(yield ~ days, data = grain_data)
+summary(grain_lm)
+```
+
+```{r grain_lm_plot, include = FALSE}
+plot(grain_lm, which = 1)
+```
+
+The plot of the residuals vs. predicted values for the simple linear regression of yield (Y) on days (X) shows an improvement in scatter and 
+
+# Question 3: Quadratic regression model
+
+Fit a quadratic regression model (including both linear and quadratic terms). Include the parameter estimate information (“Coefficients” table) in your assignment. Examine a plot of the residuals versus predicted values and comment. (4 pts)
+
+```{r grain_quadlm}
+grain_quadlm <- lm(yield ~ days + I(days^2), data = grain_data)
+summary(grain_quadlm)
+```
+
+```{r grain_quadlm}
+plot(grain_quadlm, which = 1)
+```
+
+The plot of the residuals vs. predicted values for the quadratic regression of yield (Y) on days (X) revealed curvature, indicating a violation of the assumption of linearity.
+
+
+# Question 4: Hypothesis tests (tricep, thigh, midarm)
+
+Based on the “full” model, test the null hypothesis that all three of the partial regression coefficients are simultaneously zero. In other words, test $H_0$: $\beta_1$ = $\beta_2$ = $\beta_3$ = 0. Give the F-statistic and p-value and make a conclusion about the test. (4 pts)
+
+```{r fat_betas_all}
+# 4. test if tricep, thigh, midarm coeffs are 0
+fat_matrix_q4 <- matrix(c(0, 1, 0, 0,
+                          0, 0, 1, 0,
+                          0, 0, 0, 1),
+                        nrow = 3,
+                        ncol = 4,
+                        byrow = TRUE)
+fat_betas_q4 <- broom::tidy(car::lht(fat_multreg, 
+                                  fat_matrix_q4, 
+                                  rhs = c(0, 0, 0)))
+```
+
+Based on the linear hypothesis test, we reject the null hypothesis; at least one of the partial regression coefficients (triceps, thigh, midarm) is non-zero, _F_ = `r fat_betas_q4$statistic[2]`, _p_ = `r fat_betas_q4$p.value[2]` < $\alpha$ = 0.05.
+
+# Question 5:  Hypothesis tests (thigh and midarm)
+
+Based on the “full” model, test the null hypothesis that the partial regression coefficients for Thigh and Midarm are simultaneously zero. In other words, test $H_0$: $\beta_2$ = 0 AND $\beta_3$ = 0. Give a test statistic, p-value and conclusion. (4 pts)
+
+```{r fat_betas_two}
+# 5. test if thigh and midarm coeffs are zero
+fat_matrix_q5 <- matrix(c(0, 0, 1, 0,
+                          0, 0, 0, 1),
+                        nrow = 2,
+                        ncol = 4,
+                        byrow = TRUE)
+fat_betas_q5 <- broom::tidy(car::lht(fat_multreg, 
+                                  fat_matrix_q5, 
+                                  rhs = c(0, 0)))
+```
+
+Based on the linear hypothesis test, we reject the null hypothesis; at least one partial regression coefficients (thigh, midarm) is non-zero, _F_ = `r fat_betas_q5$statistic[2]`, _p_ = `r fat_betas_q5$p.value[2]` < $\alpha$ = 0.05.
+
+# Question 6: Parsimony
+
+Now we will sequentially eliminate any terms from the model that are not significant at the 0.05 level. Starting from the “full” model, eliminate the least significant predictor variable (highest p-value) and rerun the regression. Continue that process until all predictor variables are significant at the 0.05 level. Include the parameter estimate information (“Coefficients” table) and R2 value for the final model in your assignment. (4 pts) We will use this “final” model for the remaining questions.
+
+```{r fat_multreg_cut}
+# 6. rerun fat multreg without thigh
+fat_multreg_cut <- lm(body_fat ~ triceps + midarm, data = fat_data)
+summary(fat_multreg_cut)
+```
+
+The $R^2$ value for the multiple linear regression of triceps and midarm measurements (X) on body fat percentage (Y) is 0.7862. See below for table of coefficient estimates and corresponding p-values.
+
+```{r fat_multreg_cut_tidy}
+# 6. create tidy lm df and table
+fat_multreg_cut_tidy <- broom::tidy(fat_multreg_cut)
+kableExtra::kable(fat_multreg_cut_tidy)
+```
+
+# Question 7: Speculation
+
+In the initial inspection of the pairwise correlations and plots (question 1) it appeared that there was a relationship between BodyFat and Thigh; however, Thigh was dropped from the multiple regression because it was not significant. Speculate about why this is the case.
+
+There might be multicollinearity between the thigh measurement and the other predictors. The `thigh` variable did not account for much extra unique variation in body fat percentage beyond `midarm` and `tricep`.
+
+# Question 8: Assumptions 
+
+Working from the “final” model, look at the residual plots, paying particular attention to the (A) plot of residuals versus fitted values and (B) qqplot of residuals. Discuss each of these plots and whether the regression assumptions appear to be satisfied. You do not need to include the graphs in your assignment, just discuss your findings and conclusions. (4 pts)
+
+```{r fat_plots, include = FALSE}
+# 8. visual check of regression assumptions
+par(mfrow = c(2, 2))
+plot(fat_multreg_cut)
+```
+
+Assumptions:
+
+- *Independence*: Unknown. Study design and experimentation are not described in great detail.
+
+- *Linearity*: Assumed. The plot of residuals vs. fitted values does not show a trend (bow or curve) in residuals.
+
+- *Equal variance*: Assumed. The plot of residuals vs. fitted values shows equal scatter (no megaphone or fanning pattern) among residuals.
+
+- *Normality*: Assumed. The Q-Q plot indicates the the standardized residuals adhered fairly well to the line.
+
+# Question 9: Predictions
+Consider a subject with Triceps = 20 and Midarm = 25. Working from the “final” model, give (A) predicted body fat for this subject, (B) 95% confidence interval for the mean BodyFat of subjects with the same values and (C) 95% prediction interval for the predicted BodyFat for a new subject with these values. (4 pts)
+
+```{r fat_predict}
+# 9. new observation (triceps 20 and midarm 25)
+fat_obs <- data.frame(triceps = 20, 
+                      midarm = 25)
+# 9a. calculate predicted body fat for new obs
+fat_perc <- broom::tidy(predict(fat_multreg_cut, 
+                                fat_obs))
+# 9b. calculate ci for subjects with same measures
+fat_ci <- broom::tidy(predict(fat_multreg_cut, 
+                              fat_obs, 
+                              interval = "confidence"))
+# 9c. prediction interval for predicted body fat
+fat_predict <- broom::tidy(predict(fat_multreg_cut, 
+                                   fat_obs, 
+                                   interval = "prediction"))
+```
+
+9A: `r fat_perc[[2]]`%
+
+9B: (`r fat_ci$lwr[1]`, `r fat_ci$upr[1]`)
+
+9C: (`r fat_predict$lwr[1]`, `r fat_predict$upr[1]`)
+
+# Question 10: Outlier test
+
+Working from the “final” model, identify the largest RStudent residual and do an outlier test for that value. Give the test statistic, unadjusted p-value and Bonferonni adjusted p-value. Based on the Bonferonni adjusted p-value, can we conclude this observation is an outlier? Note: The `outlierTest()` function from the `car` package can be used for this question, but may return an NA for the Bonferonni p-value. I still want the Bonferonni adjusted p-value! (4 pts)
+
+```{r fat_outlier}
+# 10. check for outliers
+car::outlierTest(fat_multreg_cut)
+```
+
+Observation #13 has the largest RStudent residual (-1.82), but, according to the unadjusted p-value (0.088) and Bonferroni p-value (1) with $\alpha$ = 0.05, this observation is not considered an outlier. Because the Bonferroni p-value is greater than 1 (and that is why the test did not return a value), it indicates there are no unusually large studentized residuals; in this case, the largest studentized residual is smaller than expected, given the model.
+
+\newpage
+
+# Appendix
+
+```{r show_code, ref.label = knitr::all_labels(), echo = TRUE, eval = FALSE}
+```
