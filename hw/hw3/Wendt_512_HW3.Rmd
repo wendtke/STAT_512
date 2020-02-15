@@ -1,0 +1,87 @@
+---
+title: "STAT 512 Homework 3"
+author: "Kathleen Wendt"
+date: "02/18/2020"
+output: pdf_document
+---
+
+```{r packages, include = FALSE}
+# load packages
+library(tidyverse)
+library(janitor)
+library(broom)
+library(car)
+```
+
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(fig.width = 6, 
+                      fig.height = 4, 
+                      fig.path = "figs/",
+                      echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+Questions 1 through 6 (Grain Yield): Data relating grain Yield (Y) to the number of Days (X) after flowering that harvesting took place was examined in “Determination of Biological Maturity and Effect of Harvesting and Drying Conditions on Milling Quality of Paddy” (J of Ag Engr. Research (1975):353-361.) The data is available from Canvas as “Grain.csv”.
+
+Notes:
+
+- For consistency, please use the `I()` or `poly( , raw = TRUE)` functions for fitting the quadratic and cubic models.
+
+- For questions 2-4, you do NOT need to include the diagnostic plots in your assignment. Just discuss your findings.
+
+```{r grain_data}
+# read grain data
+grain_data <- readr::read_csv("data/Grain.csv") %>% janitor::clean_names()
+```
+
+# Question 1: Scatterplot
+
+Create a scatterplot of Yield vs Days. Include this plot in your assignment.
+
+```{r grain_plot}
+# 1. pairwise plot (base) for grain data
+plot(grain_data)
+```
+
+# Question 2: Simple linear regression
+
+Fit a linear regression model of Yield on Days. Include the parameter estimate information (“Coefficients” table) in your assignment. Examine a plot of the residuals versus predicted values. What does the residual plot suggest? (4 pts)
+
+```{r grain_lm}
+# 2. simple linear regression with grain data
+grain_lm <- lm(yield ~ days, data = grain_data)
+summary(grain_lm)
+```
+
+```{r grain_lm_plot, include = FALSE}
+# 2. grain lin reg res vs. fitted plot
+plot(grain_lm, which = 1)
+```
+
+The plot of the residuals vs. predicted values for the simple linear regression of yield (Y) on days (X) revealed curvature, indicating a violation of the assumption of linearity.
+
+# Question 3: Quadratic regression model
+
+Fit a quadratic regression model (including both linear and quadratic terms). Include the parameter estimate information (“Coefficients” table) in your assignment. Examine a plot of the residuals versus predicted values and comment. (4 pts)
+
+```{r grain_quadlm}
+# 3. grain quad reg model
+grain_quadlm <- lm(yield ~ days + I(days^2), data = grain_data)
+summary(grain_quadlm)
+```
+
+```{r grain_quadlm_plot, include = FALSE}
+# 3. res vs fitted plot of grain quadratic model 
+plot(grain_quadlm, which = 1)
+```
+
+The plot of the residuals vs. predicted values for the quadratic regression of yield (Y) on days (X) with a quadratic term of days (X^2) showed an improvement in scatter, although non-constant variance might be an issue.
+
+\newpage
+
+# Appendix
+
+```{r show_code, ref.label = knitr::all_labels(), echo = TRUE, eval = FALSE}
+```
