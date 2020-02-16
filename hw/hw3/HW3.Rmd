@@ -23,6 +23,8 @@ knitr::opts_chunk$set(fig.width = 6,
                       message = FALSE)
 ```
 
+# Part A: Grain 
+
 Questions 1 through 6 (Grain Yield): Data relating grain Yield (Y) to the number of Days (X) after flowering that harvesting took place was examined in “Determination of Biological Maturity and Effect of Harvesting and Drying Conditions on Milling Quality of Paddy” (J of Ag Engr. Research (1975):353-361.) The data is available from Canvas as “Grain.csv”.
 
 Notes:
@@ -36,7 +38,7 @@ Notes:
 grain_data <- readr::read_csv("data/Grain.csv") %>% janitor::clean_names()
 ```
 
-# Question 1: Scatterplot
+## Question 1: Scatterplot
 
 Create a scatterplot of Yield vs Days. Include this plot in your assignment.
 
@@ -45,24 +47,24 @@ Create a scatterplot of Yield vs Days. Include this plot in your assignment.
 plot(grain_data)
 ```
 
-# Question 2: Simple linear regression
+## Question 2: Simple linear regression
 
 Fit a linear regression model of Yield on Days. Include the parameter estimate information (“Coefficients” table) in your assignment. Examine a plot of the residuals versus predicted values. What does the residual plot suggest? (4 pts)
 
 ```{r grain_lm}
-# 2. simple linear regression with grain data
+# 2. grain simple lin reg 
 grain_lm <- lm(yield ~ days, data = grain_data)
 summary(grain_lm)
 ```
 
 ```{r grain_lm_plot, include = FALSE}
-# 2. grain lin reg res vs. fitted plot
+# 2. res vs. fitted plot of grain simple lin reg model 
 plot(grain_lm, which = 1)
 ```
 
 The plot of the residuals vs. predicted values for the simple linear regression of yield (Y) on days (X) revealed curvature, indicating a violation of the assumption of linearity.
 
-# Question 3: Quadratic regression model
+## Question 3: Quadratic regression model
 
 Fit a quadratic regression model (including both linear and quadratic terms). Include the parameter estimate information (“Coefficients” table) in your assignment. Examine a plot of the residuals versus predicted values and comment. (4 pts)
 
@@ -73,22 +75,132 @@ summary(grain_quadlm)
 ```
 
 ```{r grain_quadlm_plot, include = FALSE}
-# 3. res vs fitted plot of grain quadratic model 
+# 3. res vs. fitted plot of grain quadratic model 
 plot(grain_quadlm, which = 1)
 ```
 
-The plot of the residuals vs. predicted values for the quadratic regression of yield (Y) on days (X) with a quadratic term of days ($X^2$) showed an improvement in scatter, although non-constant variance might be a slight issue.
+The plot of the residuals vs. predicted values for the quadratic regression of yield (Y) on days (X) with both linear (X) and quadratic terms of days ($X^2$) showed an improvement in scatter, although non-constant variance might be a slight issue.
 
-# Question 4: Cubic regression model
+## Question 4: Cubic regression model
 
 Fit a cubic regression model (including linear, quadratic, and cubic terms). Include the parameter estimate information (“Coefficients” table) in your assignment. Again examine a plot of the residuals versus predicted values and comment. (4 pts)
 
 ```{r grain_cubiclm}
+# 4. grain cubic reg model
 grain_cubiclm <- lm(yield ~ days + I(days^2) + I(days^3), data = grain_data)
 summary(grain_cubiclm)
 ```
 
+```{r grain_cubiclm_plot, include = FALSE}
+# 4. res vs. fitted plot of grain quadratic model 
+plot(grain_cubiclm, which = 1)
+```
 
+The plot of the residuals vs. predicted values for the cubic regression of yield (Y) on days (X) with linear, quadratic, and cubic terms for days (X) is similar to the corresponding plot for the quadratic regression model.
+
+## Question 5: Hypothesis test for cubic model
+
+In the cubic model (#4), test the hypothesis that the linear, quadratic and cubic regression coefficients are all simultaneously zero. Give the F-statistic and p-value and make a conclusion about the test.
+
+```{r grain_nsht}
+# 5. test if linear, quadratic, and cubic reg coeffs are 0
+# 5. create matrix pattern
+grain_matrix_q5 <- matrix(c(0, 1, 0, 0,
+                            0, 0, 1, 0,
+                            0, 0, 0, 1),
+                          nrow = 3,
+                          ncol = 4,
+                          byrow = TRUE)
+# 5. complete hypothesis test for coeffs
+grain_betas <- broom::tidy(car::lht(grain_cubiclm,
+                                    grain_matrix_q5,
+                                    rhs = c(0, 0, 0)))
+```
+
+Based on the linear hypothesis test, we reject the null hypothesis. At least one of the partial regression coefficients (linear, quadratic, cubic of `days`) in the cubic model for grain yield is non-zero, _F_ = `r round(grain_betas$statistic[2], 3)`, _p_ = `r round(grain_betas$p.value[2], 5)` < $\alpha$ = 0.05.
+
+## Question 6: Model selection
+
+Which model would you choose: linear, quadratic or cubic? Justify your choice. Hint: Think about the simplest model that satisfies assumptions.
+
+I would select the _quadratic_ model because it is the simplest model that satisfies assumptions reasonably well and seems to fit the data well ($R^2$ = 0.79).
+
+\newpage
+
+# Part B: Drugs
+
+Data was collected to compare 3 drug treatments for leprosy. Three variables are included in the data set: 
+
+- `Drug`: drug treatment (A, D or F)
+
+- `PreTreatment`: a pretreatment score of leprosy bacilli
+
+- `PostTreatment`: a posttreatment score of leprosy bacilli
+
+Ten patients were randomly assigned to each Drug treatment (for a total of n = 30 subjects). The goal of the study is to compare mean PostTreatment values for the 3 drugs. Hence, PostTreatment is the response variable and Drug is the predictor variable. But the researchers would like to consider including the PreTreatment value as a covariate. The data is available from Canvas as “DrugTest.csv”.
+
+```{r drug_data}
+# read drug data
+drug_data <- readr::read_csv("data/DrugTest.csv") %>% 
+  janitor::clean_names() %>% 
+  dplyr::mutate(drug = as.factor(drug)) 
+```
+
+## Question 7: Plots
+
+Construct side-by-side boxplots of (1) PreTreatment vs Drug and (2) PostTreatment vs Drug. Also construct (3) a scatterplot of PostTreatment vs PreTreatment for all Drugs on the same plot. Overlay a fitted regression line for each Drug. Include these plots in your assignment. (4 pts)
+
+```{r drug_prebox}
+# 7. side-by-side boxplot of pre by drug
+drug_data %>% 
+  dplyr::group_by(drug) %>% 
+  ggplot2::ggplot(aes(x = drug, y = pre_treatment, color = drug)) +
+  geom_boxplot() +
+  ggtitle("Pre-treatment levels by drug type") +
+  theme_minimal()
+```
+
+```{r drug_postbox}
+# 7. side-by-side boxplot of post by drug
+drug_data %>% 
+  dplyr::group_by(drug) %>% 
+  ggplot2::ggplot(aes(x = drug, y = post_treatment, color = drug)) +
+  geom_boxplot() +
+  ggtitle("Post-treatment levels by drug type") +
+  theme_minimal()
+```
+
+```{r drug_scatter}
+# 7. scatter plot of pre vs. post by drug
+drug_data %>% 
+  dplyr::group_by(drug) %>% 
+  ggplot2::ggplot(aes(x = pre_treatment, y = post_treatment, color = drug)) +
+  geom_point() +
+  geom_smooth(formula = "y ~ x", method = "lm", fill = NA) +
+  ggtitle("Patterns in pre- to post-treatment levels by drug type") +
+  theme_minimal()
+```
+
+## Question 8: One-way ANOVA
+
+Fit the one-way ANOVA model (using Drug as the only predictor). Include the ANOVA table and Tukey adjusted pairwise comparisons in your assignment. What can we conclude about differences between the Drugs? (4 pts)
+
+```{r drug_anova}
+# 8. drug one-way anova
+```
+
+## Question 9
+
+Now fit the ANCOVA model with NO Interaction (using Drug and PreTreatment as the predictors). Include the ANOVA table and Tukey adjusted pairwise comparisons in your assignment. What can we conclude about differences between the Drugs? (4 pts)
+
+## Question 10
+
+Comparing your conclusions from #8 (one-way ANOVA) vs #9 (ANCOVA) you should
+have found different conclusions regarding significant differences between the Drug treatments. Give a brief explanation of why the conclusions change when we include PreTreatment as a covariate. Hint: Consider the boxplots from #7.
+
+## Question 11
+
+An alternative approach to the ANCOVA above is to calculate the difference (Diff = PostTreatment – PreTreatment) and use this Diff as the response in a one-way ANOVA model. Do this and include the ANOVA table and Tukey adjusted pairwise comparisons in your assignment. What can we conclude about differences between the Drugs? (4 pts)
 
 \newpage
 
