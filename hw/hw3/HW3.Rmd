@@ -77,7 +77,18 @@ summary(grain_quadlm)
 plot(grain_quadlm, which = 1)
 ```
 
-The plot of the residuals vs. predicted values for the quadratic regression of yield (Y) on days (X) with a quadratic term of days (X^2) showed an improvement in scatter, although non-constant variance might be an issue.
+The plot of the residuals vs. predicted values for the quadratic regression of yield (Y) on days (X) with a quadratic term of days ($X^2$) showed an improvement in scatter, although non-constant variance might be a slight issue.
+
+# Question 4: Cubic regression model
+
+Fit a cubic regression model (including linear, quadratic, and cubic terms). Include the parameter estimate information (“Coefficients” table) in your assignment. Again examine a plot of the residuals versus predicted values and comment. (4 pts)
+
+```{r grain_cubiclm}
+grain_cubiclm <- lm(yield ~ days + I(days^2) + I(days^3), data = grain_data)
+summary(grain_cubiclm)
+```
+
+
 
 \newpage
 
