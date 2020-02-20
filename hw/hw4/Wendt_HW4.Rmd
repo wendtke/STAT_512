@@ -95,6 +95,9 @@ For each Age group, provide the estimated intercept, slope (corresponding to Ppt
 # 4. build alternate parameterization
 bio_ancova_alt <- lm(fisher_alpha ~ age + age*ppt - 1, data = bio_data)
 summary(bio_ancova_alt)
+
+# OR ?? check Canvas discussion
+summary(bio_ancova_int)
 ```
 
 ## Question 5: Pairwise comparisons
