@@ -10,6 +10,10 @@ output: pdf_document
 library(tidyverse)
 library(janitor)
 library(car)
+library(emmeans)
+library(broom)
+library(kableExtra)
+library(MuMIn)
 ```
 
 ```{r global_options, include = FALSE}
@@ -64,10 +68,9 @@ Fit the ANCOVA model WITH interaction. Include the Type 3 ANOVA table in your as
 ```{r bio_ancova}
 # 2. fit ancova with interaction term
 bio_ancova_int <- lm(fisher_alpha ~ ppt*age, data = bio_data)
-car::Anova(bio_ancova_int, type = 3)
-
 # 2. tidy model
 bio_ancova_tidy <- broom::tidy(car::Anova(bio_ancova_int, type = 3))
+kableExtra::kable(bio_ancova_tidy)
 ```
 
 Based on the analysis of covariance with an interaction term (precipitation by forest age), we can conclude there is no statistically significant difference between the slopes for the forest age groups, _p_ = `r bio_ancova_tidy$p.value[4]` > $\alpha$ = 0.05.
@@ -92,13 +95,12 @@ The Q-Q plot of residuals showed some evidence for heavy tails, indicating possi
 For each Age group, provide the estimated intercept, slope (corresponding to Ppt) and p-value corresponding to a test of the slope. (6 pts)
 
 ```{r bio_ancova_alt}
-# 4. build alternate parameterization
-bio_ancova_alt <- lm(fisher_alpha ~ age + age*ppt - 1, data = bio_data)
+# 4. build alternate parameterization; remove common intercept and main effects
+bio_ancova_alt <- lm(fisher_alpha ~ - 1 + age + age:ppt, data = bio_data)
 summary(bio_ancova_alt)
-
-# OR ?? check Canvas discussion
-summary(bio_ancova_int)
 ```
+
+As indicated above, the slope for precipitation in secondary forest (`age` 1) differs from 0.
 
 ## Question 5: Pairwise comparisons
 
@@ -106,35 +108,66 @@ Calculate Tukey adjusted pairwise comparisons of the slopes. What can we conclud
 
 ```{r bio_tukey}
 # 5. tukey pairwise comparisons of slopes for age
-
+bio_slope_em <- emmeans::emtrends(model = bio_ancova_alt,
+                                  specs = "age",
+                                  var = "ppt")
+kableExtra::kable(broom::tidy(pairs(bio_slope_em)))
 ```
+
+Based on the Tukey-adjusted pairwise comparisons, there are no differences in the slopes by forest age and precipitation level. 
+
 
 ## Question 6: Estimated marginal means
 
 Calculate emmeans for the Age groups at (A) Ppt = 2500 and (B) Ppt = 3000.
 
+### Question 6A: 2500 `ppt`
+
+```{r bio_ppt_1}
+# 6A. emmeans for age at specific ppt levels
+bio_ppt_em1 <- emmeans::emmeans(bio_ancova_int, 
+                                pairwise ~ age, 
+                                at = list(ppt = 2500))
+kableExtra::kable(broom::tidy(bio_ppt_em1$emmeans))
+```
+
+### Question 6B: 3000 `ppt`
+
+```{r bio_ppt_2}
+# 6B. emmeans for age at specific ppt levels
+bio_ppt_em2 <- emmeans::emmeans(bio_ancova_int, 
+                                pairwise ~ age, 
+                                at = list(ppt = 3000))
+kableExtra::kable(broom::tidy(bio_ppt_em2$emmeans))
+```
+
+
 _Questions 7 and 8 (FisherAlpha continued): Use the ANCOVA WITH interaction model above as the “full” model. But our goal is to choose a model that predicts FisherAlpha._
 
-## Question 7:
+## Question 7: Backward elimination
 
 Based on a backwards elimination approach, which model is preferred? Briefly justify your response. Use $\alpha$ = 0.05.
 
-## Question 8: 
-
-Based on AIC criteria, which model is preferred? Briefly justify your response.
-Hint: Use `dredge()` from `MuMIn`. Use code something like this:
+```{r bio_back}
 
 ```
-library(MuMIn)
+
+## Question 8: AIC
+
+Based on AIC, which model is preferred? Briefly justify your response.
+Hint: Use `dredge()` from `MuMIn`. 
+
+```{r bio_aic}
+# 8. fisher_alpha model selection based on AIC
 options(na.action = "na.fail")
-dredge(FullModel, rank = "AIC")
+MuMIn::dredge(bio_ancova_int, rank = "AIC")
 ```
 
 # Part B: Body Fat
 
 Return to the Body Fat data from HW2. The data is available from Canvas as “BodyFat.csv”. With 3 predictors, there are 8 possible models. Which model would you choose? To identify the model, just state which predictors are included.
 
-## Question 9: 
+## Question 9: Backward elimination
 
 Choose a model using “backwards elimination” (hypothesis testing) approach. Use $\alpha$ = 0.05. No need to discuss, just state your final model.
 
