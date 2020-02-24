@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  23 FEB 2020 20:42
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  23 FEB 2020 20:45
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1144,44 +1144,44 @@ LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10> not available
 (Font)              Font shape `T1/lmtt/b/n' tried instead on input line 275.
 [3] [4]
 
-Package xcolor Warning: Incompatible color definition on input line 378.
+Package xcolor Warning: Incompatible color definition on input line 393.
 
 
-Package xcolor Warning: Incompatible color definition on input line 438.
+Package xcolor Warning: Incompatible color definition on input line 453.
 
 
-Package xcolor Warning: Incompatible color definition on input line 438.
+Package xcolor Warning: Incompatible color definition on input line 453.
 
 
-Underfull \vbox (badness 1189) detected at line 438
+Underfull \vbox (badness 1189) detected at line 453
  []
 
 
-Package xcolor Warning: Incompatible color definition on input line 438.
+Package xcolor Warning: Incompatible color definition on input line 453.
 
 [5]
 
-Package xcolor Warning: Incompatible color definition on input line 438.
+Package xcolor Warning: Incompatible color definition on input line 453.
 
 
-Package xcolor Warning: Incompatible color definition on input line 438.
+Package xcolor Warning: Incompatible color definition on input line 453.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 440.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 455.
 [6]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 440.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 455.
 (./Wendt_HW4.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 440.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 440.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 455.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 455.
 Package rerunfilecheck Info: File `Wendt_HW4.out' has not changed.
 (rerunfilecheck)             Checksum: F46B190E3DF4ACD9DD3DBF6010F4D233;2812.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 440.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 455.
  ) 
 Here is how much of TeX's memory you used:
- 14790 strings out of 492995
- 213294 string characters out of 6132704
+ 14794 strings out of 492995
+ 213338 string characters out of 6132704
  332670 words of memory out of 5000000
  18002 multiletter control sequences out of 15000+600000
- 57966 words of font info for 85 fonts, out of 8000000 for 9000
+ 58132 words of font info for 87 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  34i,7n,38p,355b,458s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2017/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/local/
@@ -1196,7 +1196,7 @@ cal/texlive/2017/texmf-dist/fonts/type1/public/lm/lmr17.pfb></usr/local/texlive
 f-dist/fonts/type1/public/lm/lmtk10.pfb></usr/local/texlive/2017/texmf-dist/fon
 ts/type1/public/lm/lmtt10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/p
 ublic/lm/lmtti10.pfb>
-Output written on Wendt_HW4.pdf (6 pages, 252683 bytes).
+Output written on Wendt_HW4.pdf (6 pages, 253638 bytes).
 PDF statistics:
  179 PDF objects out of 1000 (max. 8388607)
  156 compressed objects within 2 object streams

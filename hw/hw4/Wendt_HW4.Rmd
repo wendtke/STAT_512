@@ -152,6 +152,10 @@ Based on a backwards elimination approach, which model is preferred? Briefly jus
 
 ```
 
+> For Question 7,  in doing the backwards elimination,  when I used the code that was in the Highway example, the summary leaves out the first level of the term of Age in both the main effects and the interaction with Ppt.  Does this matter, because the term Age has to be included or excluded at all levels anyway?
+
+> You are right -- age has to be included or excluded at all levels.   This is why for categorical variables with more than 2 levels, you'll want to refer to the Anova Type 3 results, rather than the coefficient table from summary().   The Anova table tests all levels simultaneously. 
+
 ## Question 8: AIC
 
 Based on AIC, which model is preferred? Briefly justify your response.
