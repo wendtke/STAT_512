@@ -172,32 +172,60 @@ options(na.action = "na.fail")
 MuMIn::dredge(bio_ancova_int, rank = "AIC")
 ```
 
-Based on AIC, Model 4 with main effects of forest age and precipitation and 5 degrees of freedom is preferred. This model has the lowest AIC value.
+Based on AIC, Model 4 with forest age and precipitation as predictors (no interaction) and 5 degrees of freedom is preferred. This model has the lowest AIC value.
 
 # Part B: Body Fat
 
 Return to the Body Fat data from HW2. The data is available from Canvas as “BodyFat.csv”. With 3 predictors, there are 8 possible models. Which model would you choose? To identify the model, just state which predictors are included.
 
+```{r fat_data}
+fat_data <- readr::read_csv("data/BodyFat.csv") %>% janitor::clean_names()
+```
+
 ## Question 9: Backward elimination
 
 Choose a model using “backwards elimination” (hypothesis testing) approach. Use $\alpha$ = 0.05. No need to discuss, just state your final model.
 
-## Question 10:
+```{r fat_back, include = FALSE}
+# 9. build full fat ancova model with interactions
+fat_full <- lm(body_fat ~ triceps + thigh + midarm + triceps*thigh*midarm, 
+               data = fat_data)
+# 9. build fat ancova without interaction terms
+fat_ancova <- lm(body_fat ~ triceps + thigh + midarm, data = fat_data)
+# 9. drop thigh term (highest p-value) from ancova and review
+fat_ancova <- update(fat_ancova, ~ . -thigh) 
+drop1(fat_ancova, test = "F")
+summary(fat_ancova)
+```
+
+Based on backward elimination, the preferred model is an ANCOVA (no interaction) with tricep and midarm measurements as predictors.
+
+## Question 10: Forward selection
 
 Choose a model using “forward selection” (hypothesis testing) approach. Use $\alpha$ = 0.05. No need to discuss, just state your final model.
 
-## Question 11:
-
-Choose a model using AICC. Hint: Use `dredge()` from `MuMIn`. No need to discuss, just state your final model.
-
-Use code something like this:
-
+```{r fat_forward, include = FALSE}
+# 10. create and test null model 
+fat_null <- lm(body_fat ~ 1, data = fat_data)
+add1(fat_null, scope = fat_full, test = "F")
+# 10. add thigh as predictor and test
+fat_forward_1 <- update(fat_null, ~ . + thigh)
+add1(fat_forward_1, scope = fat_full, test = "F")
 ```
-library(MuMIn)
-FullModel <- lm(BodyFat ~ ., data = InData)
+
+Based on forward selection, the preferred model is an ANOVA with thigh measurement as the primary predictor of body fat.
+
+## Question 11: AICc
+
+Choose a model using AICc. Hint: Use `dredge()` from `MuMIn`. No need to discuss, just state your final model.
+
+```{r fat_aicc, include = FALSE}
+# 11. compare fat models using AICc
 options(na.action = "na.fail")
-dredge(FullModel)
+MuMIn::dredge(fat_full, rank = "AICc")
 ```
+
+Just like Q10, an ANOVA with `thigh` as the sole predictor has the lowest AICc value.
 
 \newpage
 
