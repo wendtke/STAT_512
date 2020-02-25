@@ -1,7 +1,7 @@
 ---
 title: "STAT 512 Homework 4"
 author: "Kathleen Wendt"
-date: "02/24/2020"
+date: "02/25/2020"
 output: pdf_document
 ---
 
@@ -100,7 +100,7 @@ bio_ancova_alt <- lm(fisher_alpha ~ - 1 + age + age:ppt, data = bio_data)
 summary(bio_ancova_alt)
 ```
 
-As indicated above, the slope for precipitation in secondary forest (`age` 1) differs from 0.
+As indicated above, the slope for precipitation in secondary forest (`age` 1) differs from 0. No other slope differs from 0.
 
 ## Question 5: Pairwise comparisons
 
@@ -108,14 +108,13 @@ Calculate Tukey adjusted pairwise comparisons of the slopes. What can we conclud
 
 ```{r bio_tukey}
 # 5. tukey pairwise comparisons of slopes for age
-bio_slope_em <- emmeans::emtrends(model = bio_ancova_alt,
+bio_slope_em <- emmeans::emtrends(model = bio_ancova_int,
                                   specs = "age",
                                   var = "ppt")
 kableExtra::kable(broom::tidy(pairs(bio_slope_em)))
 ```
 
 Based on the Tukey-adjusted pairwise comparisons, there are no differences in the slopes by forest age and precipitation level. 
-
 
 ## Question 6: Estimated marginal means
 
@@ -141,20 +140,26 @@ bio_ppt_em2 <- emmeans::emmeans(bio_ancova_int,
 kableExtra::kable(broom::tidy(bio_ppt_em2$emmeans))
 ```
 
-
 _Questions 7 and 8 (FisherAlpha continued): Use the ANCOVA WITH interaction model above as the “full” model. But our goal is to choose a model that predicts FisherAlpha._
 
 ## Question 7: Backward elimination
 
 Based on a backwards elimination approach, which model is preferred? Briefly justify your response. Use $\alpha$ = 0.05.
 
-```{r bio_back}
+1. Starting with the full model (ANCOVA with interaction term), the interaction between precipitation and forest age is not significant, _p_ = `r bio_ancova_tidy$p.value[4]`, indicating that the interaction term should be removed.
 
+```{r bio_back_1}
+# 7. call full model - ancova with interaction
+kableExtra::kable(bio_ancova_tidy)
 ```
 
-> For Question 7,  in doing the backwards elimination,  when I used the code that was in the Highway example, the summary leaves out the first level of the term of Age in both the main effects and the interaction with Ppt.  Does this matter, because the term Age has to be included or excluded at all levels anyway?
+2. The interaction term was removed from the full model and re-tested. Because both main effects (precipitation and forest age) are significant at $\alpha$ = 0.05, the ANCOVA without an interaction term is the preferred model based on backward elimination.
 
-> You are right -- age has to be included or excluded at all levels.   This is why for categorical variables with more than 2 levels, you'll want to refer to the Anova Type 3 results, rather than the coefficient table from summary().   The Anova table tests all levels simultaneously. 
+```{r bio_back_2}
+# 7. int term NS - build ancova without interaction
+bio_ancova <- lm(fisher_alpha ~ ppt + age, data = bio_data)
+kableExtra::kable(broom::tidy(car::Anova(bio_ancova, type = 3)))
+```
 
 ## Question 8: AIC
 
@@ -166,6 +171,8 @@ Hint: Use `dredge()` from `MuMIn`.
 options(na.action = "na.fail")
 MuMIn::dredge(bio_ancova_int, rank = "AIC")
 ```
+
+Based on AIC, Model 4 with main effects of forest age and precipitation and 5 degrees of freedom is preferred. This model has the lowest AIC value.
 
 # Part B: Body Fat
 
