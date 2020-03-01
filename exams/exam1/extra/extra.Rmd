@@ -5,3 +5,154 @@ date: "3/1/2020"
 output: pdf_document
 ---
 
+```{r packages, include = FALSE}
+# load packages
+library(tidyverse)
+library(janitor)
+library(car)
+library(MuMIn)
+```
+
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(fig.width = 6, 
+                      fig.height = 4, 
+                      fig.path = "figs/",
+                      echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+# Question 1: Body Fat
+
+```{r fat_data}
+fat_data <- readr::read_csv("data/BodyFat.csv") %>% janitor::clean_names()
+```
+
+## 1A: VIF
+
+```{r fat_full_lm}
+# fit full fat model
+fat_full_lm <- lm(body_fat ~ triceps + thigh + midarm, data = fat_data)
+
+# calculate vif values for each predictor
+car::vif(fat_full_lm)
+
+# calculate vif "by hand" for triceps vs others - which slide??? from key:
+1/(1-0.9986)
+```
+
+I don't know how to calculate VIF by hand or where to find the information in the slides.
+
+## 1B: Refit
+
+```{r fat_back_lm}
+# fit fat model selected by backwards elimination
+fat_back_lm <- lm(body_fat ~ triceps + midarm, data = fat_data)
+
+# calculate vif values for each predictor
+car::vif(fat_back_lm)
+```
+
+## 1C: Influence
+
+```{r fat_cook}
+# identify obs with largest cook's distance
+plot(fat_back_lm)
+influence.measures(fat_back_lm) # obs 3 largest
+
+# consider if obs 3 is influential 
+## dfbetas - abs value exceeds 2/sq(n)
+2/sqrt(20)
+
+## dffits - if abs value exceeds 2*sqrt((k+1)/n)
+2*sqrt((2+1)/20)
+
+## cooksd - if > 1
+```
+
+Observation 3 is influential based on DFBETAS and DFFITS but not according to Cook's distance.
+
+# Question 2: Mortality
+
+```{r death_data}
+death_data <- readr::read_csv("data/Mortality.csv") %>%
+  janitor::clean_names() %>% 
+  dplyr::mutate(
+    hc_log = log(hc),
+    nox_log = log(nox),
+    so2_log = log(so2)
+  )
+```
+
+## 2A: Correlations
+
+```{r death_corr}
+death_data %>% 
+  dplyr::select(mortality, hc_log, nox_log, so2_log) %>% 
+  corrr::correlate()
+```
+There is a high correlation between hydrocarbon and nitrogen oxide pollution.
+
+## 2B: Model selection
+
+```{r death_lm}
+# build mr with demo and climate predictors
+death_demo_lm <- lm(mortality ~ 
+                 precip + humidity + 
+                 jantemp + julytemp + 
+                 over65 + house + educ + 
+                 sound + density + nonwhite + 
+                 whitecol + poor, 
+               data = death_data)
+
+# select best model 
+options(na.action = "na.fail")
+death_demo_subset <- MuMIn::dredge(death_demo_lm, rank = "AIC")
+```
+
+The model selected includes `density`, `educ`, `house`, `jantemp`, `julytemp`, `nonwhite`, and `precip`.
+
+## 2C: Add pollution predictors
+
+```{r death_full_lm}
+# update multreg with pollution indicators
+death_full_lm <- lm(mortality ~
+                      precip + jantemp + julytemp + house +
+                      educ + density + nonwhite + 
+                      hc_log + nox_log, so2_log,
+                    data = death_data)
+
+# select best model 
+options(na.action = "na.fail")
+death_poll_subset <- MuMIn::dredge(death_full_lm,
+                                   fixed = c("density", "educ", "house",
+                                             "jantemp", "julytemp", 
+                                             "nonwhite", "precip"),
+                                   rank = "AIC")
+
+death_full_lm <- lm(mortality ~
+                      precip + jantemp + julytemp + house +
+                      educ + density + nonwhite + 
+                      hc_log + nox_log,
+                    data = death_data)
+```
+
+## 2D: VIF
+
+```{r death_vif}
+car::vif(death_full_lm)
+```
+
+There is collinearity between `hc_log` and `nox_log`.
+
+## 2E: Interpretation
+
+```{r death_summary}
+summary(death_full_lm)
+```
+
+A one-unit increase in `hc_log` is associated with a 28.48 unit _decrease_ in predicted mortality, holding other variables in the model constant.
+
+A one-unit increase in `nox_log` is associated with a 37.65 unit _increase_ in predicted mortality, holding other variables in the model constant.
+
