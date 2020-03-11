@@ -62,7 +62,7 @@ Give an estimate of the CK level at which doctors would be 90% sure that a subje
 
 # Part 2: Birth Weight
 
-An observational study was done to investigate risk factors associated with low infant birth weight. Data from 189 (singleton) pregnancies were collected at Baystate Medical Center, Springfield, MA during 1986. The response variable was low (1 if birth weight was less than 2.5 kg, 0 otherwise). The predictor variables included: age (mother’s age in years), mwt (mother’s weight in pounds prior to pregnancy), race (mother’s race, 1= white, 2=black, 3=other) and smoke (1=mother smoked during pregnancy, 0 otherwise). The data is available from Canvas as “birthweight.csv”.
+An observational study was done to investigate risk factors associated with low infant birth weight. Data from 189 (singleton) pregnancies were collected at Baystate Medical Center, Springfield, MA during 1986. The response variable was low (1 if birth weight was less than 2.5 kg, 0 otherwise). The predictor variables included: `age` (mother’s age in years), `mwt` (mother’s weight in pounds prior to pregnancy), `race` (mother’s race, 1= white, 2=black, 3=other) and smoke (1=mother smoked during pregnancy, 0 otherwise). The data is available from Canvas as “birthweight.csv”.
 
 Important note: Be sure to define race and smoke as factors!
 
@@ -76,7 +76,7 @@ To examine the relationship between low vs smoke: calculate the proportion of bi
 
 ## Question C: Logistic Regression
 
-Run a logistic regression with smoke as the only predictor variable. Calculate the emmeans using type = “response” for each smoke group (copy/paste the results to your assignment). Note: these should match your simple proportions from part B. (4 pts)
+Run a logistic regression with smoke as the only predictor variable. Calculate the emmeans using `type = “response”` for each smoke group (copy/paste the results to your assignment). _Note: these should match your simple proportions from part B._ (4 pts)
 
 ## Question D: AIC Model Selection
 
@@ -91,8 +91,8 @@ corresponding 95% CI for Smokers vs Non-Smokers (smoke 1 vs 0).
 
 ## Question: F: EM Means
 
-Calculate the emmeans using type = “response” for each smoke group
-(copy/paste the results to your assignment). Note that these values are different from what you found in part C because of the additional variables included in the model.
+Calculate the emmeans using `type = “response”` for each smoke group
+(copy/paste the results to your assignment). _Note that these values are different from what you found in part C because of the additional variables included in the model._
 
 ## Question G: Tukey
 
