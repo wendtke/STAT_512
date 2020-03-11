@@ -1,0 +1,235 @@
+---
+title: "STAT 512 Homework 5"
+author: "Kathleen Wendt"
+date: "03/24/2020"
+output: pdf_document
+---
+
+```{r packages, include = FALSE}
+# load packages
+library(tidyverse)
+library(janitor)
+library(car)
+library(emmeans)
+library(broom)
+library(kableExtra)
+library(MuMIn)
+```
+
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(fig.width = 6, 
+                      fig.height = 4, 
+                      fig.path = "figs/",
+                      echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+# Part A: Panama Canal
+
+Ott & Longnecker Problem 16.23 describes a study original published in Pyke (2001). Researchers studied the floristic composition of lowland tropical forest in the watershed of the Panama Canal. For this group of question we will work on fitting a model to explain `FisherAlpha` (Y) using `Age` and `Ppt` as predictors. The following characteristics were measured on 45 plots:
+
+- `FisherAlpha`: a biodiversity index
+
+- `Age`: 1 = secondary forest, 2 = mature secondary, 3 = old growth, primary forest
+
+- `Ppt`: annual precipitation (mm)
+
+Note that `Age` should be defined as.factor in R.
+
+```{r bio_data}
+# read panama data
+bio_data <- readr::read_csv("data/ex16-23.txt") %>% 
+  janitor::clean_names() %>% 
+  dplyr::select(fisher_alpha, age, ppt) %>% 
+  dplyr::mutate(age = as.factor(age))
+```
+
+## Question 1: Plot
+
+Construct a scatterplot of FisherAlpha (Y) vs Ppt (X) for all Age groups on the same plot. Overlay a fitted regression line for each Age group. (2 pts)
+
+```{r bio_plot}
+# 1. plot fisher_alpha and ppt by age group
+bio_data %>% 
+  dplyr::group_by(age) %>% 
+  ggplot2::ggplot(aes(x = ppt, y = fisher_alpha, color = age)) +
+  geom_point() +
+  geom_smooth(formula = "y ~ x", method = "lm", fill = NA) +
+  ggtitle("Biodiversity index scores and annual precipitation by forest age") +
+  theme_minimal()
+```
+
+## Question 2: ANCOVA + interaction
+
+Fit the ANCOVA model WITH interaction. Include the Type 3 ANOVA table in your assignment. What can we conclude about differences between the slopes for the Age groups? Briefly justify your response.
+
+```{r bio_ancova}
+# 2. fit ancova with interaction term
+bio_ancova_int <- lm(fisher_alpha ~ ppt*age, data = bio_data)
+# 2. tidy model
+bio_ancova_tidy <- broom::tidy(car::Anova(bio_ancova_int, type = 3))
+kableExtra::kable(bio_ancova_tidy)
+```
+
+Based on the analysis of covariance with an interaction term (precipitation by forest age), we can conclude there is no statistically significant difference between the slopes for the forest age groups, _p_ = `r bio_ancova_tidy$p.value[4]` > $\alpha$ = 0.05.
+
+_Note: Continue using the ANCOVA WITH interaction model for questions 3-6._
+
+## Question 3: Diagnostic plots
+
+Consider the diagnostic plots (Resids vs Fitted and QQplot of residuals). You do not need to include these plots in your assignment, but briefly discuss your findings.
+
+```{r bio_diagnostics, include = FALSE}
+# 3. check diagnostic plots
+plot(bio_ancova_int)
+```
+
+The plot of residuals vs. fitted values indicated equal scatter and no concerning patterns, which support assumptions of linearity and constant variance.
+
+The Q-Q plot of residuals showed some evidence for heavy tails, indicating possible outliers, but, considering the small sample size, this distribution of residuals is sufficiently approximately normal.
+
+## Question 4: Forest age differences
+
+For each Age group, provide the estimated intercept, slope (corresponding to Ppt) and p-value corresponding to a test of the slope. (6 pts)
+
+```{r bio_ancova_alt}
+# 4. build alternate parameterization; remove common intercept and main effects
+bio_ancova_alt <- lm(fisher_alpha ~ - 1 + age + age:ppt, data = bio_data)
+summary(bio_ancova_alt)
+```
+
+As indicated above, the slope for precipitation in secondary forest (`age` 1) differs from 0. No other slope differs from 0.
+
+## Question 5: Pairwise comparisons
+
+Calculate Tukey adjusted pairwise comparisons of the slopes. What can we conclude about differences between the slopes for the Age groups? Briefly justify your response.
+
+```{r bio_tukey}
+# 5. tukey pairwise comparisons of slopes for age
+bio_slope_em <- emmeans::emtrends(model = bio_ancova_int,
+                                  specs = "age",
+                                  var = "ppt")
+kableExtra::kable(broom::tidy(pairs(bio_slope_em)))
+```
+
+Based on the Tukey-adjusted pairwise comparisons, there are no differences in the slopes by forest age and precipitation level. 
+
+## Question 6: Estimated marginal means
+
+Calculate emmeans for the Age groups at (A) Ppt = 2500 and (B) Ppt = 3000.
+
+### Question 6A: 2500 `ppt`
+
+```{r bio_ppt_1}
+# 6A. emmeans for age at specific ppt levels
+bio_ppt_em1 <- emmeans::emmeans(bio_ancova_int, 
+                                pairwise ~ age, 
+                                at = list(ppt = 2500))
+kableExtra::kable(broom::tidy(bio_ppt_em1$emmeans))
+```
+
+### Question 6B: 3000 `ppt`
+
+```{r bio_ppt_2}
+# 6B. emmeans for age at specific ppt levels
+bio_ppt_em2 <- emmeans::emmeans(bio_ancova_int, 
+                                pairwise ~ age, 
+                                at = list(ppt = 3000))
+kableExtra::kable(broom::tidy(bio_ppt_em2$emmeans))
+```
+
+_Questions 7 and 8 (FisherAlpha continued): Use the ANCOVA WITH interaction model above as the “full” model. But our goal is to choose a model that predicts FisherAlpha._
+
+## Question 7: Backward elimination
+
+Based on a backwards elimination approach, which model is preferred? Briefly justify your response. Use $\alpha$ = 0.05.
+
+1. Starting with the full model (ANCOVA with interaction term), the interaction between precipitation and forest age is not significant, _p_ = `r bio_ancova_tidy$p.value[4]`, indicating that the interaction term should be removed.
+
+```{r bio_back_1}
+# 7. call full model - ancova with interaction
+kableExtra::kable(bio_ancova_tidy)
+```
+
+2. The interaction term was removed from the full model and re-tested. Because both main effects (precipitation and forest age) are significant at $\alpha$ = 0.05, the ANCOVA without an interaction term is the preferred model based on backward elimination.
+
+```{r bio_back_2}
+# 7. int term NS - build ancova without interaction
+bio_ancova <- lm(fisher_alpha ~ ppt + age, data = bio_data)
+kableExtra::kable(broom::tidy(car::Anova(bio_ancova, type = 3)))
+```
+
+## Question 8: AIC
+
+Based on AIC, which model is preferred? Briefly justify your response.
+Hint: Use `dredge()` from `MuMIn`. 
+
+```{r bio_aic}
+# 8. fisher_alpha model selection based on AIC
+options(na.action = "na.fail")
+MuMIn::dredge(bio_ancova_int, rank = "AIC")
+```
+
+Based on AIC, Model 4 with forest age and precipitation as predictors (no interaction) and 5 degrees of freedom is preferred. This model has the lowest AIC value.
+
+# Part B: Body Fat
+
+Return to the Body Fat data from HW2. The data is available from Canvas as “BodyFat.csv”. With 3 predictors, there are 8 possible models. Which model would you choose? To identify the model, just state which predictors are included.
+
+```{r fat_data}
+fat_data <- readr::read_csv("data/BodyFat.csv") %>% janitor::clean_names()
+```
+
+## Question 9: Backward elimination
+
+Choose a model using “backwards elimination” (hypothesis testing) approach. Use $\alpha$ = 0.05. No need to discuss, just state your final model.
+
+```{r fat_back, include = FALSE}
+# 9. build full fat ancova model with interactions
+fat_full <- lm(body_fat ~ triceps + thigh + midarm + triceps*thigh*midarm, 
+               data = fat_data)
+# 9. build fat ancova without interaction terms
+fat_ancova <- lm(body_fat ~ triceps + thigh + midarm, data = fat_data)
+# 9. drop thigh term (highest p-value) from ancova and review
+fat_ancova <- update(fat_ancova, ~ . -thigh) 
+drop1(fat_ancova, test = "F")
+summary(fat_ancova)
+```
+
+Based on backward elimination, the preferred model is an ANCOVA (no interaction) with tricep and midarm measurements as predictors.
+
+## Question 10: Forward selection
+
+Choose a model using “forward selection” (hypothesis testing) approach. Use $\alpha$ = 0.05. No need to discuss, just state your final model.
+
+```{r fat_forward, include = FALSE}
+# 10. create and test null model 
+fat_null <- lm(body_fat ~ 1, data = fat_data)
+add1(fat_null, scope = fat_full, test = "F")
+# 10. add thigh as predictor and test
+fat_forward_1 <- update(fat_null, ~ . + thigh)
+add1(fat_forward_1, scope = fat_full, test = "F")
+```
+
+Based on forward selection, the preferred model is an ANOVA with thigh measurement as the primary predictor of body fat.
+
+## Question 11: AICc
+
+Choose a model using AICc. Hint: Use `dredge()` from `MuMIn`. No need to discuss, just state your final model.
+
+```{r fat_aicc, include = FALSE}
+# 11. compare fat models using AICc
+options(na.action = "na.fail")
+MuMIn::dredge(fat_full, rank = "AICc")
+```
+
+Just like Q10, an ANOVA with `thigh` as the sole predictor has the lowest AICc value.
+
+\newpage
+
+# Appendix
+
+```{r show_code, ref.label = knitr::all_labels(), echo = TRUE, eval = FALSE}
+```
