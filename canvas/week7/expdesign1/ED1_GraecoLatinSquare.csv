@@ -1,0 +1,17 @@
+row,col,letter,trt,time
+1,1,beta,C,11
+1,2,gamma,B,10
+1,3,delta,D,14
+1,4,alpha,A,8
+2,1,alpha,B,8
+2,2,delta,C,12
+2,3,gamma,A,10
+2,4,beta,D,12
+3,1,delta,A,9
+3,2,alpha,D,11
+3,3,beta,B,7
+3,4,gamma,C,15
+4,1,gamma,D,9
+4,2,beta,A,8
+4,3,alpha,C,18
+4,4,delta,B,6
