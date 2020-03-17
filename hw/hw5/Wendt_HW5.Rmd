@@ -12,9 +12,10 @@ library(janitor)
 library(broom)
 library(kableExtra)
 library(MASS)
-# library(car)
-# library(emmeans)
-# library(MuMIn)
+library(emmeans)
+library(MuMIn)
+library(car)
+library(ResourceSelection)
 ```
 
 ```{r global_options, include = FALSE}
@@ -27,7 +28,7 @@ knitr::opts_chunk$set(fig.width = 6,
                       message = FALSE)
 ```
 
-# Part 1: Heart Data
+# Part 1: Heart data
 
 For this problem use the data described in Ott and Longnecker Example 12.22 (p 664 in the 7th edition). The data are available from Canvas as “CKheart.csv”. Read the description of the data in the book. You can use the output in the book to check your own R calculations.
 
@@ -37,7 +38,7 @@ heart_data <- readr::read_csv("data/CKheart.csv") %>%
   janitor::clean_names()
 ```
 
-## Question A: Logistic Regression
+## Question A: Logistic regression
 
 Use `glm()` to fit a logistic regression model that estimates the probability of a heart attack as a function of CK value. Include the Coefficients table in your assignment.
 
@@ -66,7 +67,7 @@ plot(rate ~ ck, data = heart_data)
 lines(p_hat ~ heart_seq)
 ```
 
-## Question C: OR and CI
+## Question C: Odds ratio of CK
 
 Give an estimate of the odds ratio corresponding to CK and an approximate 95% confidence interval.
 
@@ -79,7 +80,7 @@ exp(confint(heart_logreg))
 
 The odds ratio estimate is 1.036. The corresponding confidence interval is (1.028, 1.045).
 
-## Question D: CK Odds
+## Question D: CK odds
 
 Give a one-sentence description of the odds of heart attack among those with a given level of CK, compared to the odds of a heart attack among those with a level of CK ten points higher. (4 pts)
 
@@ -94,7 +95,7 @@ A 10-point increase in CK is associated with 1.4x increased odds of a heart atta
 
 Calculate McFadden’s Pseudo $R^2$ for the model.
 
-```{r heart_psuedo}
+```{r heart_psuedo, include = FALSE}
 # 1e. calculate pseudo r2
 heart_null <- glm(cbind(with_ha, without_ha) ~ 1,
                   family = binomial(link = "logit"),
@@ -108,7 +109,7 @@ McFadden's Pseudo $R^2$ is 0.856.
 
 Give an estimate of the CK level at which doctors would be 90% sure that a subject has had a heart attack.
 
-```{r heart_ld90}
+```{r heart_ld90, include = FALSE}
 # 1f. create probability sequence for LD
 heart_prob <- seq(0.1, 0.9, 0.05)
 # 1f. calculate LDs
@@ -117,7 +118,7 @@ MASS::dose.p(heart_logreg, cf = 1:2, p = heart_prob)
 
 At a CK level of 148.86, doctors would be 90% confident that the subject had a heart attack.
 
-# Part 2: Birth Weight
+# Part 2: Birth weight
 
 An observational study was done to investigate risk factors associated with low infant birth weight. Data from 189 (singleton) pregnancies were collected at Baystate Medical Center, Springfield, MA during 1986. The response variable was low (1 if birth weight was less than 2.5 kg, 0 otherwise). The predictor variables included: `age` (mother’s age in years), `mwt` (mother’s weight in pounds prior to pregnancy), `race` (mother’s race, 1= white, 2=black, 3=other) and smoke (1=mother smoked during pregnancy, 0 otherwise). The data is available from Canvas as “birthweight.csv”.
 
@@ -127,7 +128,8 @@ _Important note: Be sure to define race and smoke as factors!_
 # 2. read and prepare birth weight data
 birth_data <- readr::read_csv("data/birthweight.csv") %>% 
   janitor::clean_names() %>% 
-  dplyr::mutate(race = as.factor(race),
+  dplyr::mutate(low = as.factor(low),
+                race = as.factor(race),
                 smoke = as.factor(smoke))
 ```
 
@@ -135,8 +137,8 @@ birth_data <- readr::read_csv("data/birthweight.csv") %>%
 
 To examine the relationship between low vs race: calculate the proportion of births resulting in low birth=weight for each race category and present the p-value from a chi-square test. (4 pts)
 
-```{r birth_age}
-# 2a. build race/low birth weight table
+```{r race_weight, include = FALSE}
+# 2a. build maternal race/low birth weight table
 race_weight <- table(birth_data$race, birth_data$low)
 # 2a. calculate proportions
 prop.table(race_weight, 1)
@@ -144,46 +146,111 @@ prop.table(race_weight, 1)
 chisq.test(race_weight)
 ```
 
+Based on the Chi-square test, there is no difference in the proportions of low vs. normal birth weight based on mother race, _p_ = 0.08189 > $\alpha$ = 0.05.
+
 ## Question B: Smoking
 
-To examine the relationship between low vs smoke: calculate the proportion of births resulting in low birthweight for each smoke category and present the p-value from a chi-square test. (4 pts)
+To examine the relationship between low vs smoke: calculate the proportion of births resulting in low birth-weight for each smoke category and present the p-value from a chi-square test. (4 pts)
 
-```{r}
-#B
-Table2 <- with( table(smoke, low), data = BirthData)
-prop.table(Table2, 1)
-chisq.test(Table2)
+```{r smoke_weight, include = FALSE}
+# 2a. build maternal smoking/low birth weight table
+smoke_weight <- table(birth_data$smoke, birth_data$low)
+# 2a. calculate proportions
+prop.table(smoke_weight, 1)
+# 2b. conduct chi square test
+chisq.test(smoke_weight)
 ```
 
+Based on the Chi-square test, there is a difference in the proportions of low vs. normal birth weight based on mother smoking, _p_ = 0.03958 < $\alpha$ = 0.05.
 
-## Question C: Logistic Regression
+## Question C: Logistic regression
 
 Run a logistic regression with smoke as the only predictor variable. Calculate the emmeans using `type = “response”` for each smoke group (copy/paste the results to your assignment). _Note: these should match your simple proportions from part B._ (4 pts)
 
-## Question D: AIC Model Selection
+```{r birth_logreg}
+# 2c. build logistic regression with smoke
+birth_logreg <- glm(low ~ smoke,
+                    family = binomial(link = "logit"),
+                    data = birth_data)
+# 2c. extract emmeans based on smoke log reg
+emmeans::emmeans(birth_logreg, ~ smoke, type = "response")
+```
+
+## Question D: AIC model selection
 
 Now consider all 4 predictors (age, mwt, race, smoke). Using best subsets selection with AIC criteria, which variables are included in the final model? Include the Coefficients table and Type3 Anova table in your assignment. (4 pts)
 
 _NOTE: Use the selected model from the previous question for all further questions!_
 
-## Question E: OR / CI
+```{r birth_aic, include = FALSE}
+# 2d. build full model with all possible predictors
+birth_full <- glm(low ~ .,
+                  family = binomial(link = "logit"),
+                  data = birth_data)
+# 2d. extract aic for all possible models
+options(na.action = "na.fail")
+MuMIn::dredge(birth_full, rank = "AIC")
+```
+
+Based on AIC best subsets selection, the "best" model includes maternal weight, race, and smoking as predictors of low birth weight.
+
+```{r birth_final}
+# 2d. build final model based on aic
+birth_final <- glm(low ~ mwt + race + smoke, 
+                   family = binomial(link = "logit"), 
+                   data = birth_data)
+# 2d. show coefficients table
+kableExtra::kable(broom::tidy(birth_final))
+# 2d. show Anova type 3 table
+kableExtra::kable(broom::tidy(car::Anova(birth_final, type = 3)))
+```
+
+## Question E: Smokers vs. non-smokers 
 
 Based on the model selected above, give the estimated odds ratio and
 corresponding 95% CI for Smokers vs Non-Smokers (smoke 1 vs 0).
 
-## Question: F: EM Means
+```{r birth_orci, include = FALSE}
+# 2e. estimated OR for smokers vs. non
+exp(birth_final$coef)
+# 2e. CI for OR smokers vs. non
+exp(confint(birth_final))
+```
+
+The estimated odds ratio for low birth weight in maternal smokers vs. non-smokers is 2.886. The corresponding confidence interval is (1.395, 6.198).
+
+## Question: F: New smoke emmeans
 
 Calculate the emmeans using `type = “response”` for each smoke group
 (copy/paste the results to your assignment). _Note that these values are different from what you found in part C because of the additional variables included in the model._
 
-## Question G: Tukey
+```{r birth_emmeans}
+# 2f. extract emmeans based on final low birth weight log reg
+emmeans::emmeans(birth_final, pairwise ~ smoke, type = "response")
+```
+
+## Question G: Compare by maternal race
 
 Run Tukey adjusted pairwise comparisons for race. Discuss your findings. (4
 pts)
 
+```{r birth_tukey, include = FALSE}
+# 2g. Tukey-adjusted pairwise comparisons for race
+emmeans::emmeans(birth_final, pairwise ~ race, type = "response")
+```
+
+White mothers (Level 1) have significantly lower odds of having an infant with a low birth weight, compared to black mothers (Level 2), _p_ = 0.031, and compared to mothers of other races (Level 3), _p_ = 0.049.
+
 ## Question H: Hoslem Test
 
-Give the p-value corresponding to the Hosmer-Lemeshow test. Use `hoslem.test()` from the `ResourceSelection` package with g = 10 groups. Based on this test, is there evidence of lack of fit?
+Give the p-value corresponding to the Hosmer-Lemeshow test. Use `hoslem.test()` from the `ResourceSelection` package with `g = 10` groups. Based on this test, is there evidence of lack of fit?
+
+```{r birth_hoslem, include = FALSE}
+# 2h. hosmer-lemeshow test for goodness of fit
+ResourceSelection::hoslem.test(birth_final$y, fitted(birth_final), g = 10)
+```
+
+Based on the Hosmer-Lemeshow test, _p_ = 0.4997, we fail to reject the null hypothesis; there is no evidence for lack of fit.
 
 \newpage
 
