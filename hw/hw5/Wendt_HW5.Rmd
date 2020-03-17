@@ -9,10 +9,11 @@ output: pdf_document
 # load packages
 library(tidyverse)
 library(janitor)
+library(broom)
+library(kableExtra)
+library(MASS)
 # library(car)
 # library(emmeans)
-# library(broom)
-# library(kableExtra)
 # library(MuMIn)
 ```
 
@@ -31,7 +32,7 @@ knitr::opts_chunk$set(fig.width = 6,
 For this problem use the data described in Ott and Longnecker Example 12.22 (p 664 in the 7th edition). The data are available from Canvas as “CKheart.csv”. Read the description of the data in the book. You can use the output in the book to check your own R calculations.
 
 ```{r heart_data}
-# read heart data
+# 1. read and prepare heart data
 heart_data <- readr::read_csv("data/CKheart.csv") %>% 
   janitor::clean_names()
 ```
@@ -40,39 +41,120 @@ heart_data <- readr::read_csv("data/CKheart.csv") %>%
 
 Use `glm()` to fit a logistic regression model that estimates the probability of a heart attack as a function of CK value. Include the Coefficients table in your assignment.
 
+```{r heart_logreg}
+# 1a. build logistic regression model of heart attack probability
+heart_logreg <- glm(cbind(with_ha, without_ha) ~ ck, 
+                    family = binomial(link = "logit"),
+                    data = heart_data)
+kableExtra::kable(broom::tidy(heart_logreg))
+```
+
 ## Question B: Plot
 
 Construct a plot of the data with the fitted logistic regression curve overlaid. Include the plot in your assignment.
 
-## Question C: OR / CI
+```{r heart_plot}
+# 1b. create rate variable for heart data
+heart_data <- heart_data %>% 
+  dplyr::mutate(rate = with_ha/(with_ha + without_ha))
+# 1b. create new data sequence
+heart_seq <- seq(10, 500, 1)
+# 1b. predict new data 
+p_hat <- predict(heart_logreg, list(ck = heart_seq), type = "response")
+# 1b. plot data
+plot(rate ~ ck, data = heart_data)
+lines(p_hat ~ heart_seq)
+```
+
+## Question C: OR and CI
 
 Give an estimate of the odds ratio corresponding to CK and an approximate 95% confidence interval.
+
+```{r heart_orci, include = FALSE}
+# 1c. heart ck odds ratio
+exp(heart_logreg$coef)
+# 1c. heart ck ci
+exp(confint(heart_logreg))
+```
+
+The odds ratio estimate is 1.036. The corresponding confidence interval is (1.028, 1.045).
 
 ## Question D: CK Odds
 
 Give a one-sentence description of the odds of heart attack among those with a given level of CK, compared to the odds of a heart attack among those with a level of CK ten points higher. (4 pts)
 
-## Question E: Psuedo R^2
+```{r ck_odds, include = FALSE}
+# 1d. exp ck coeff x10
+exp(0.0351*10)
+```
 
-Calculate McFadden’s pseudo R2 for the model.
+A 10-point increase in CK is associated with 1.4x increased odds of a heart attack. 
 
-## Question F: LD90
+## Question E: Psuedo R-squared
+
+Calculate McFadden’s Pseudo $R^2$ for the model.
+
+```{r heart_psuedo}
+# 1e. calculate pseudo r2
+heart_null <- glm(cbind(with_ha, without_ha) ~ 1,
+                  family = binomial(link = "logit"),
+                  data = heart_data)
+1 - logLik(heart_logreg)/logLik(heart_null)
+```
+
+McFadden's Pseudo $R^2$ is 0.856.
+
+## Question F: LD-90
 
 Give an estimate of the CK level at which doctors would be 90% sure that a subject has had a heart attack.
+
+```{r heart_ld90}
+# 1f. create probability sequence for LD
+heart_prob <- seq(0.1, 0.9, 0.05)
+# 1f. calculate LDs
+MASS::dose.p(heart_logreg, cf = 1:2, p = heart_prob)
+```
+
+At a CK level of 148.86, doctors would be 90% confident that the subject had a heart attack.
 
 # Part 2: Birth Weight
 
 An observational study was done to investigate risk factors associated with low infant birth weight. Data from 189 (singleton) pregnancies were collected at Baystate Medical Center, Springfield, MA during 1986. The response variable was low (1 if birth weight was less than 2.5 kg, 0 otherwise). The predictor variables included: `age` (mother’s age in years), `mwt` (mother’s weight in pounds prior to pregnancy), `race` (mother’s race, 1= white, 2=black, 3=other) and smoke (1=mother smoked during pregnancy, 0 otherwise). The data is available from Canvas as “birthweight.csv”.
 
-Important note: Be sure to define race and smoke as factors!
+_Important note: Be sure to define race and smoke as factors!_
+
+```{r birth_data}
+# 2. read and prepare birth weight data
+birth_data <- readr::read_csv("data/birthweight.csv") %>% 
+  janitor::clean_names() %>% 
+  dplyr::mutate(race = as.factor(race),
+                smoke = as.factor(smoke))
+```
 
 ## Question A: Race
 
-To examine the relationship between low vs race: calculate the proportion of births resulting in low birthweight for each race category and present the p-value from a chi-square test. (4 pts)
+To examine the relationship between low vs race: calculate the proportion of births resulting in low birth=weight for each race category and present the p-value from a chi-square test. (4 pts)
+
+```{r birth_age}
+# 2a. build race/low birth weight table
+race_weight <- table(birth_data$race, birth_data$low)
+# 2a. calculate proportions
+prop.table(race_weight, 1)
+# 2b. conduct chi square test
+chisq.test(race_weight)
+```
 
 ## Question B: Smoking
 
 To examine the relationship between low vs smoke: calculate the proportion of births resulting in low birthweight for each smoke category and present the p-value from a chi-square test. (4 pts)
+
+```{r}
+#B
+Table2 <- with( table(smoke, low), data = BirthData)
+prop.table(Table2, 1)
+chisq.test(Table2)
+```
+
 
 ## Question C: Logistic Regression
 
