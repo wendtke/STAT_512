@@ -7,8 +7,8 @@ output: pdf_document
 
 ```{r packages, include = FALSE}
 # load packages
-# library(tidyverse)
-# library(janitor)
+library(tidyverse)
+library(janitor)
 # library(broom)
 # library(kableExtra)
 # library(MASS)
@@ -32,27 +32,76 @@ knitr::opts_chunk$set(fig.width = 6,
 
 A study was done to investigate the effectiveness of five methods for the irrigation of blueberry shrubs. Ten farms were included in the study. Each of the five treatments was evaluated at each of the ten farms (with irrigation treatments randomly assigned to plots). The response variable is weight of the harvested fruit. The data is available from Canvas as “Irrigation.csv”. Note: Be sure to define Farm `as.factor`!
 
+```{r berry_data}
+# 1. load blueberry irrigation data
+berry_data <- readr::read_csv("data/Irrigation.csv") %>% 
+  janitor::clean_names() %>% 
+  dplyr::mutate(method = as.factor(method),
+                farm = as.factor(farm))
+```
+
 ## Question A: Summary table
 
 Calculate the sample size, simple mean and SE for each method (averaging over farms). Include the resulting summary table in your assignment.
 
-## Question B: Bar chart
+```{r berry_table}
+# 1a. create summary statistics table for blueberry data
+berry_table <- berry_data %>%
+  dplyr::group_by(method) %>%
+  dplyr::summarize(
+    n = n(),
+    mean = mean(weight),
+    sd = sd(weight),
+    se = sd/sqrt(n)
+    )
 
-Create a bar chart (with SE bars) to summarize the data. Include the resulting graph in your assignment. Assuming your summary table from above is called `SumStats` (with columns `Method`, `mean` and `se`), you can use code something like this:
-
-```{r}
-Library(ggplot2)
-ggplot(SumStats, aes(x = Method, y = mean)) +
-geom_bar(stat = "identity") + geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2)
+kableExtra::kable(berry_table)
 ```
 
-## Question C: RCB model & assumptions
+\newpage
+
+## Question B: Bar chart
+
+Create a bar chart (with SE bars) to summarize the data. Include the resulting graph in your assignment. 
+
+```{r berry_plot}
+# 1b. create summary bar chart 
+berry_plot <- berry_table %>%
+  ggplot2::ggplot(aes(x = method, y = mean)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin = mean - se, 
+                    ymax = mean + se),
+                width = 0.2) + 
+  theme_minimal()
+
+berry_plot
+```
+
+## Question C: RCB model and assumptions
 
 Fit the RCB model. Inspect the diagnostic plots (Resids vs Fitted and Normal QQplot of Resids), and comment on what you see. Do the assumptions appear to be satisfied? Note: You do not have to include the diagnostic plot in your assignment, just comment on each graph. (4 pts)
+
+```{r berry_rcb}
+# 1c. fit rcb model for blueberry data
+berry_rcb_lm <- lm(weight ~ farm + method, data = berry_data)
+# 1c. rcb diagnostic plots
+par(mfrow = c(2, 2))
+plot(berry_rcb_lm)
+```
+
+Yes, assumptions appear to be satisfied.
+
+- Residuals vs Fitted: Evenly distributed residuals. Supports assumption of linearity and constant variance.
+- Normal Q-Q: Residuals tightly follow line. Supports assumption of normally distributed residuals.
 
 ## Question D: Type 3 ANOVA for RCB
 
 Continuing with the RCB model from the previous question, include the Type3 ANOVA table in your assignment.
+
+```{r}
+car::Anova(berry_rcb_lm, type = 3)
+```
+
 
 ## Question E: Differences by method
 
@@ -67,11 +116,11 @@ Make a conclusion about the effectiveness of the blocking in this example. Justi
 The investigators are interested in which irrigation methods are significantly different from each other. Use `emmeans()` function from the `emmeans` package to get Tukey-adjusted p-values for comparing treatments. Then use this information to create a “cld” display, where methods that are NOT significantly different from each other are given the same number grouping. Hint: Use code something like this:
 
 ```{r}
-library(emmeans)
-library(multcomp)
-emout <- emmeans(Model1, pairwise ~ Method)
-emout
-cld(emout$emmeans)
+# library(emmeans)
+# library(multcomp)
+# emout <- emmeans(Model1, pairwise ~ Method)
+# emout
+# cld(emout$emmeans)
 ```
 
 ## Question H: Simple means and SEs
