@@ -81,7 +81,7 @@ berry_plot
 
 Fit the RCB model. Inspect the diagnostic plots (Resids vs Fitted and Normal QQplot of Resids), and comment on what you see. Do the assumptions appear to be satisfied? Note: You do not have to include the diagnostic plot in your assignment, just comment on each graph. (4 pts)
 
-```{r berry_rcb}
+```{r berry_rcb, include = FALSE}
 # 1c. fit rcb model for blueberry data
 berry_rcb_lm <- lm(weight ~ farm + method, data = berry_data)
 # 1c. rcb diagnostic plots
@@ -92,24 +92,30 @@ plot(berry_rcb_lm)
 Yes, assumptions appear to be satisfied.
 
 - Residuals vs Fitted: Evenly distributed residuals. Supports assumption of linearity and constant variance.
-- Normal Q-Q: Residuals tightly follow line. Supports assumption of normally distributed residuals.
+- Normal Q-Q: Residuals tightly follow line. Supports assumption of normality.
 
 ## Question D: Type 3 ANOVA for RCB
 
 Continuing with the RCB model from the previous question, include the Type3 ANOVA table in your assignment.
 
-```{r}
-car::Anova(berry_rcb_lm, type = 3)
+```{r berry_type3}
+# 1d. call and tidy anova type 3 on rcb berry
+berry_type3 <- broom::tidy(car::Anova(berry_rcb_lm, type = 3))
+# 1d. kable type 3 table
+kableExtra::kable(berry_type3)
 ```
-
 
 ## Question E: Differences by method
 
 Can we conclude that there is a difference between the irrigation methods? Justify your response with a test statistic and p-value.
 
+Yes, there is a statistically significant difference in blueberry weights by irrigation method, based on the test statistic (`r round(berry_type3$statistic[3], 3)`), with a corresponding p-value (`r berry_type3$p.value[3]`) < $\alpha$ = 0.05.
+
 ## Question F: Effectiveness of blocking
 
 Make a conclusion about the effectiveness of the blocking in this example. Justify your response with a test statistic and p-value.
+
+Yes, blocking by farm was effective, based on the test statistic (`r round(berry_type3$statistic[2], 3)`), with a corresponding p-value (`r round(berry_type3$p.value[2], 3)`) < $\alpha$ = 0.05.
 
 ## Question G: Multiple comparisons
 
