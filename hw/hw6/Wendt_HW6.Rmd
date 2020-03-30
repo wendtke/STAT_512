@@ -9,13 +9,11 @@ output: pdf_document
 # load packages
 library(tidyverse)
 library(janitor)
-# library(broom)
-# library(kableExtra)
-# library(MASS)
-# library(emmeans)
-# library(MuMIn)
-# library(car)
-# library(ResourceSelection)
+library(car)
+library(broom)
+library(kableExtra)
+library(emmeans)
+library(multcomp)
 ```
 
 ```{r global_options, include = FALSE}
@@ -32,7 +30,7 @@ knitr::opts_chunk$set(fig.width = 6,
 
 A study was done to investigate the effectiveness of five methods for the irrigation of blueberry shrubs. Ten farms were included in the study. Each of the five treatments was evaluated at each of the ten farms (with irrigation treatments randomly assigned to plots). The response variable is weight of the harvested fruit. The data is available from Canvas as “Irrigation.csv”. Note: Be sure to define Farm `as.factor`!
 
-```{r berry_data}
+```{r 1_berry_data}
 # 1. load blueberry irrigation data
 berry_data <- readr::read_csv("data/Irrigation.csv") %>% 
   janitor::clean_names() %>% 
@@ -44,7 +42,7 @@ berry_data <- readr::read_csv("data/Irrigation.csv") %>%
 
 Calculate the sample size, simple mean and SE for each method (averaging over farms). Include the resulting summary table in your assignment.
 
-```{r berry_table}
+```{r 1a_berry_table}
 # 1a. create summary statistics table for blueberry data
 berry_table <- berry_data %>%
   dplyr::group_by(method) %>%
@@ -54,7 +52,6 @@ berry_table <- berry_data %>%
     sd = sd(weight),
     se = sd/sqrt(n)
     )
-
 kableExtra::kable(berry_table)
 ```
 
@@ -64,7 +61,7 @@ kableExtra::kable(berry_table)
 
 Create a bar chart (with SE bars) to summarize the data. Include the resulting graph in your assignment. 
 
-```{r berry_plot}
+```{r 1b_berry_plot}
 # 1b. create summary bar chart 
 berry_plot <- berry_table %>%
   ggplot2::ggplot(aes(x = method, y = mean)) +
@@ -73,7 +70,6 @@ berry_plot <- berry_table %>%
                     ymax = mean + se),
                 width = 0.2) + 
   theme_minimal()
-
 berry_plot
 ```
 
@@ -81,7 +77,7 @@ berry_plot
 
 Fit the RCB model. Inspect the diagnostic plots (Resids vs Fitted and Normal QQplot of Resids), and comment on what you see. Do the assumptions appear to be satisfied? Note: You do not have to include the diagnostic plot in your assignment, just comment on each graph. (4 pts)
 
-```{r berry_rcb, include = FALSE}
+```{r 1c_berry_rcb, include = FALSE}
 # 1c. fit rcb model for blueberry data
 berry_rcb_lm <- lm(weight ~ farm + method, data = berry_data)
 # 1c. rcb diagnostic plots
@@ -98,7 +94,7 @@ Yes, assumptions appear to be satisfied.
 
 Continuing with the RCB model from the previous question, include the Type3 ANOVA table in your assignment.
 
-```{r berry_type3}
+```{r 1d_berry_type3}
 # 1d. call and tidy anova type 3 on rcb berry
 berry_type3 <- broom::tidy(car::Anova(berry_rcb_lm, type = 3))
 # 1d. kable type 3 table
@@ -119,51 +115,138 @@ Yes, blocking by farm was effective, based on the test statistic (`r round(berry
 
 ## Question G: Multiple comparisons
 
-The investigators are interested in which irrigation methods are significantly different from each other. Use `emmeans()` function from the `emmeans` package to get Tukey-adjusted p-values for comparing treatments. Then use this information to create a “cld” display, where methods that are NOT significantly different from each other are given the same number grouping. Hint: Use code something like this:
+The investigators are interested in which irrigation methods are significantly different from each other. Use `emmeans()` function from the `emmeans` package to get Tukey-adjusted p-values for comparing treatments. Then use this information to create a “cld” display, where methods that are NOT significantly different from each other are given the same number grouping. 
 
-```{r}
-# library(emmeans)
-# library(multcomp)
-# emout <- emmeans(Model1, pairwise ~ Method)
-# emout
-# cld(emout$emmeans)
+```{r 1g_berry_emmeans}
+# 1g. emmeans for berry data by irrigation method, avg by farm block
+berry_em <- emmeans::emmeans(berry_rcb_lm, pairwise ~ method)
+# 1g. tidy table for emmeans with tukey-adjusted p-values
+kableExtra::kable(broom::tidy(berry_em$contrasts))
+# 1g. kable cld for emmeans
+kableExtra::kable(multcomp::cld(berry_em$emmeans))
 ```
 
 ## Question H: Simple means and SEs
 
-Are the simple means (part A) and emmeans (part G) the same for this analysis? What about the simple SE’s (part A) versus SE’s returned by emmeans (part G)?
+Are the simple means (part A) and emmeans (part G) the same for this analysis? What about the simple SEs (part A) versus SEs returned by emmeans (part G)?
+
+The simple means (1A) and estimated marginal means (1G) are the same because this is a balanced design. The standard errors differ between 1A and 1G because, in balanced designs based on the model (1G), N is set, thus the standard errors are the same, reflecting equal confidence in parameter estimation by block and treatment.
 
 ## Question I: One-way ANOVA
 
 Run the analysis as a one-way ANOVA using just Method in the model. (In practice I would not do this, but try it here for illustration.) Include the ANOVA table in your assignment. How does dfResid compare to the RCB model? How does MSResid compare to the RCB model? (4 pts) Hint: Recall that MSResid = SSResid/dfResid.
 
+```{r 1i_berry_lm}
+# 1i. construct one-way anova with just method
+berry_lm <- lm(weight ~ method, data = berry_data)
+# call anova table for berry-method lm
+anova(berry_lm) # fine to use `anova()` b/c only one predictor in model
+```
+
+The `dfResid` for the one-way ANOVA is 45, which is higher, or more flexible, than the RCB model (`dfResid` = 36). The `MSResid` for the one-way ANOVA is 2848, which is higher, than the RCB model (`MSResid` = `r 61867/36`).
+
 # Part 2: Fertilizer data
 
 A fertilizer trial on a range grass (blue grama) was conducted in a randomized complete block design. Five fertilizer treatments were randomly assigned to the plots in each of five blocks, but two observations have missing values. The response variable (Y) represents phosphorous. The data is available from Canvas as “GrassMiss.csv”. Note: Be sure to define Block `as.factor`!
+
+```{r 2_fertilizer_data}
+# 2. load fertilizer data
+fertilizer_data <- readr::read_csv("data/GrassMiss.csv") %>% 
+  janitor::clean_names() %>% 
+  dplyr::mutate(block = as.factor(block),
+                trt = as.factor(trt))
+```
 
 ## Question A: Summary table
 
 Calculate the simple mean for each trt (averaging over blocks). Include the resulting summary table in your assignment. Hint: Because of the NA values, it is easiest to use `aggregate()` here.
 
+```{r 2a_fert_table}
+# 2a. create summary statistics table for fertilizer data
+fert_table <- aggregate(y ~ trt, 
+                        FUN = mean, 
+                        data = fertilizer_data)
+kableExtra::kable(fert_table)
+```
+
 ## Question B: RCB model with Type 3 ANOVA
 
-Fit the RCB model and include the Type3 ANOVA table in your assignment.
+Fit the RCB model and include the Type 3 ANOVA table in your assignment.
 
-## Question C: EM Means with CIs
+```{r 2b_fert_rcb_lm}
+# 2b. build fertilizer rcb model
+fert_rcb_lm <- lm(y ~ block + trt, data = fertilizer_data)
+# 2b. call and tidy anova type 3 on rcb fertilizer
+fert_type3 <- broom::tidy(car::Anova(fert_rcb_lm, type = 3))
+# 2b. kable type 3 table
+kableExtra::kable(fert_type3)
+```
+
+## Question C: Estimated marginal means
 
 Calculate the emmeans and corresponding confidence intervals for each `trt` and include them in your assignment. Note that the SE is larger (and CIs are wider) for treatments that have missing values.
+
+```{r 2c_fert_emmeans}
+# 2c. calculate emmeans for fertilizer rcb model by trt, avg by block
+fert_em <- emmeans::emmeans(fert_rcb_lm, pairwise ~ trt)
+# 2c. tidy table for emmeans with tukey-adjusted p-values
+kableExtra::kable(broom::tidy(fert_em$emmeans))
+```
 
 ## Question D: Means
 
 Are the simple means (part A) and emmeans (part C) the same for this analysis?
 
+The simple means (2A) and estimated marginal means (2C) are almost the same, except for the treatment categories (`Crtl` and `N50wP`) with missing `y` values. 
+
 ## Question E: Predict NA values
 
 Use the coefficient estimates (from the `summary()` output) to compute predicted values for the two missing observations. Show your work for full credit. (Note that you can verify these using the `predict()` function.) (4 pts)
 
+```{r 2e_fert_summary, include = FALSE}
+# 2e. review fertilizer rcb model summary for coeff estimates
+summary(fert_rcb_lm)
+```
+
+Obs 14 $\hat{y}$ = 2.02059 + 0.01365 + 0.39400 = **2.42824**
+
+Obs 21 $\hat{y}$ = 2.02059 + 0.06765 = **2.08824**
+
+```{r 2e_fert_predict}
+# 2e. show predicted missing value for control and N50wP
+fert_est_data <- data.frame(fertilizer_data, 
+                            yhat = predict(fert_rcb_lm,
+                                           newdata = fertilizer_data))
+# 2e. subset predicted observations to cross-check hand calculations
+fert_est_data[c(14, 21), ]
+```
+
 ## Question F: N50wP average
 
 Verify that the emmean for N50wP is the average of the five predicted values (one from each block) for N50wP. Show your work for full credit.
+
+Yes, the estimated marginal mean for N50wP is the average of the five predicted values (one from each block) for N50wP.
+
+### By hand
+
+predicted: (2.414588 + 2.410588 + 2.428235 + 2.502588 + 2.482235) / 5 = 2.447647 
+
+emmean: 2.45
+
+### Code
+
+```{r 2f_fert_n50wp}
+# 2f. calculate average five predicted y values of N50wP
+fert_pred_n50wp <- fert_est_data %>%
+  dplyr::filter(trt == "N50wP") %>% 
+  dplyr::summarize(estimate = mean(yhat))
+# 2f. cross-check with corresponding emmean 
+fert_n50wp <- broom::tidy(fert_em$emmeans) %>% 
+  dplyr::filter(trt == "N50wP") %>% 
+  dplyr::select(estimate)
+# 2f. compare predicted vs estimated
+dplyr::full_join(fert_pred_n50wp, fert_n50wp, by = "estimate")
+```
 
 \newpage
 
