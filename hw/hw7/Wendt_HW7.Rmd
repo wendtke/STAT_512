@@ -1,0 +1,137 @@
+---
+title: "STAT 512 Homework 7"
+author: "Kathleen Wendt"
+date: "04/08/2020"
+output: pdf_document
+---
+
+```{r packages, include = FALSE}
+# load packages
+library(tidyverse)
+library(janitor)
+library(kableExtra)
+library(car)
+library(emmeans)
+```
+
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(fig.width = 6, 
+                      fig.height = 4, 
+                      fig.path = "figs/",
+                      echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+# Part 1: PCB data
+
+In this group of questions we use the “PCB.csv” data available from Canvas. A researcher is interested in comparing PCB concentrations by sex (m, f) and species (1, 2). This corresponds to four groups (sp1f, sp1m, sp2f, sp2m). Note that depending on the analysis you will use group OR sex and species in the analysis but not all three!
+
+```{r 1_pcb_data}
+# 1. load pcb data
+pcb_data <- readr::read_csv("data/PCB.csv") %>%
+  dplyr::mutate(sex = as.factor(sex),
+                species = as.factor(species),
+                group = as.factor(group))
+```
+
+## Question A: Table and plot
+
+Create a table of summary statistics including sample size, mean and standard deviation for each sex, species combination. Then construct an interaction plot. For consistency, please put sex on the X axis. Include both the summary table and interaction plot in your assignment. (4 pts)
+
+```{r 1a_pcb_table}
+# 1a. create summary statistics table for pcb data
+pcb_table <- pcb_data %>%
+  dplyr::group_by(sex, species) %>%
+  dplyr::summarize(
+    n = n(),
+    mean = mean(pcb),
+    sd = sd(pcb))
+# 1a. kable pcb sum stat table
+kableExtra::kable(pcb_table)
+```
+
+```{r 1a_pcb_plot}
+# 1a. create interaction plot
+with(interaction.plot(x.factor = sex,
+                      trace.factor = species,
+                      response = pcb),
+     data = pcb_data)
+```
+
+## Question B: One-way ANOVA
+
+Fit a one-way ANOVA model to the data using group as the predictor. Construct the Type 3 ANOVA table.
+
+```{r 1b_pcb_1anova}
+# 1b. change contrast defaults
+options(contrasts = c("contr.sum", "contra.poly"))
+contrasts(pcb_data$group)
+# 1b. construct one-way anova model with group as predictor
+pcb_1anova <- lm(pcb ~ group, data = pcb_data)
+car::Anova(pcb_1anova, type = 3)
+```
+
+## Question C: Estimated marginal means
+
+With model from 2B, use `emmeans` to calculate (Tukey adjusted) pairwise comparisons for all four groups.
+
+```{r 1c_pcb_emmeans}
+# 1c. extract emmeans for group
+emmeans::emmeans(pcb_1anova, pairwise ~ group)
+```
+
+## Question D: Two-way ANOVA
+
+Fit a two-way ANOVA model to the data using sex and species as predictors. Be sure to include the interaction. Construct the Type 3 ANOVA table.
+
+```{r 1d_pcb_2anova}
+# 1d. change contrast defaults
+options(contrasts = c("contr.sum", "contra.poly"))
+# 1d. build two-way anova model
+pcb_2anova <- lm(pcb ~ sex*species, data = pcb_data)
+car::Anova(pcb_2anova)
+```
+
+## Question E: Sex/species emmeans
+
+Use `emmeans( , pairwise ~ sex:species)` to calculate (Tukey adjusted) pairwise comparisons for all four groups.
+
+```{r 1e_pcb_2emmeans}
+# 1e. extract emmeans for group by sex*species
+emmeans::emmeans(pcb_2anova, pairwise ~ sex:species)
+```
+
+## Question F: Species emmeans
+
+Use `emmeans( , pairwise ~ species)` to calculate the pairwise comparison corresponding to the main effect of species. _Note that the p-value from this comparison should match the F-test corresponding to species from the ANOVA table from question 4._
+
+```{r 1f_pcb_semmeans}
+# 1f. extract emmeans for group by species
+emmeans::emmeans(pcb_2anova, pairwise ~ species)
+```
+
+## Question G: Reflection
+
+Consider the output from the two previous questions. From question 5, for the “m,1 - m,2” comparison you should have found an estimate = 2.67, p-value = 0.0857. From question 6, for the “1 - 2” comparison you should have found an estimate = 2.01, p-value = 0.0154. Briefly explain why we find a smaller p-value for the “1 - 2” comparison even though the estimated difference is smaller.
+
+When more tests are conducted (6 vs. 1), there is a Tukey correction ("penalty") to minimize the family-wise error rate. 
+
+_Note: The two models from above are equivalent. This can be seen by comparing the ANOVA tables (questions 2 and 4) and the pairwise comparisons (questions 3, 5). Either analysis approach is acceptable. However, one benefit of the two-way analysis is that since the interaction is not significant, we can easily discuss main effects._
+
+# Part 2: Roadways
+
+Questions 8 through 13 (Roadways): For this group of questions use the data described in Ott & Longnecker problem 15.14 (p 907 in the 7th Edition).
+8. Create a table of summary statistics including sample size, mean and standard deviation for each Treatment*Concentration combination. Then construct an interaction plot. For consistency, please put Treatment on the X axis. Include both the summary table and interaction plot in your assignment. (4 pts)
+9. Describe the blocking and treatment structure.
+10. Considering your answer to the previous question, fit an appropriate model and include the Type 3 ANOVA table in your assignment. (4 pts) 11. Discuss the value of the blocking for this data. Justify your response with appropriate test-statistic(s) and p-value(s).
+12. Compare mean response for High vs Low Concentration separately for each Treatment. This can be done using emmeans. Include the emmeans “contrasts” output in your assignment, but also (briefly) summarize your findings. (4 pts)
+13. Compare mean responses between the 3 Treatments separately for each Concentration. This can be done using emmeans (default Tukey adjustment is fine). Include the emmeans “contrasts” output in your assignment, but also (briefly) summarize your findings for Concentration = Low. (4 pts)
+
+\newpage
+
+# Appendix
+
+```{r show_code, ref.label = knitr::all_labels(), echo = TRUE, eval = FALSE}
+```
