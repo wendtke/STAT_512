@@ -12,6 +12,7 @@ library(janitor)
 library(kableExtra)
 library(car)
 library(emmeans)
+library(broom)
 ```
 
 ```{r global_options, include = FALSE}
@@ -29,7 +30,7 @@ knitr::opts_chunk$set(fig.width = 6,
 In this group of questions we use the “PCB.csv” data available from Canvas. A researcher is interested in comparing PCB concentrations by sex (m, f) and species (1, 2). This corresponds to four groups (sp1f, sp1m, sp2f, sp2m). Note that depending on the analysis you will use group OR sex and species in the analysis but not all three!
 
 ```{r 1_pcb_data}
-# 1. load pcb data
+# 1. load and prepare pcb data
 pcb_data <- readr::read_csv("data/PCB.csv") %>%
   dplyr::mutate(sex = as.factor(sex),
                 species = as.factor(species),
@@ -122,12 +123,99 @@ _Note: The two models from above are equivalent. This can be seen by comparing t
 
 # Part 2: Roadways
 
-Questions 8 through 13 (Roadways): For this group of questions use the data described in Ott & Longnecker problem 15.14 (p 907 in the 7th Edition).
-8. Create a table of summary statistics including sample size, mean and standard deviation for each Treatment*Concentration combination. Then construct an interaction plot. For consistency, please put Treatment on the X axis. Include both the summary table and interaction plot in your assignment. (4 pts)
-9. Describe the blocking and treatment structure.
-10. Considering your answer to the previous question, fit an appropriate model and include the Type 3 ANOVA table in your assignment. (4 pts) 11. Discuss the value of the blocking for this data. Justify your response with appropriate test-statistic(s) and p-value(s).
-12. Compare mean response for High vs Low Concentration separately for each Treatment. This can be done using emmeans. Include the emmeans “contrasts” output in your assignment, but also (briefly) summarize your findings. (4 pts)
-13. Compare mean responses between the 3 Treatments separately for each Concentration. This can be done using emmeans (default Tukey adjustment is fine). Include the emmeans “contrasts” output in your assignment, but also (briefly) summarize your findings for Concentration = Low. (4 pts)
+For this group of questions use the data described in Ott & Longnecker problem 15.14 (p 907 in the 7th Edition).
+
+```{r 2_road_data}
+# 2. load and prepare roadway data
+road_data <- readxl::read_xlsx("data/ex15-14.xlsx") %>%
+  janitor::clean_names() %>% 
+  dplyr::mutate(roadway = as.factor(roadway),
+                treatment = as.factor(treatment),
+                concentration = as.factor(concentration))
+```
+
+## Question A: Table and plot
+
+Create a table of summary statistics including sample size, mean and standard deviation for each Treatment*Concentration combination. Then construct an interaction plot. For consistency, please put Treatment on the X axis. Include both the summary table and interaction plot in your assignment. (4 pts)
+
+```{r 2a_road_table}
+# 2a. create summary statistics table for road data
+road_table <- road_data %>%
+  dplyr::group_by(treatment, concentration) %>%
+  dplyr::summarize(
+    n = n(),
+    mean = mean(cracks),
+    sd = sd(cracks)
+    )
+# 2a. kable road stat table
+kableExtra::kable(road_table)
+```
+
+```{r 2a_road_plot}
+# 2a. create interaction plot
+with(interaction.plot(x.factor = treatment,
+                      trace.factor = concentration,
+                      response = cracks),
+     data = road_data)
+```
+
+## Question B: Describe
+
+Describe the blocking and treatment structure.
+
+The study examined the amount of damage (i.e., number of cracks per mile) associated with three methods for clearing snow and ice from roads (i.e., sodium chloride, calcium chloride, and sand). A _randomized block design_ (i.e., traffic volume from previous winter) was used to try to minimize the effect of traffic on road damage. Each of the six _treatments_ (i.e., high or low levels of each of the three aforementioned substances) was _randomly assigned_ to five roads. Based on the textbook description, the treatment structure can be considered one factor (treatment) with six levels (high and low levels of each of the three methods); however, according to data structure, this has a factorial design of treatment (3 levels) and concentration (2 levels) with blocking by roadway (5 roadways).
+
+## Question C: Fit model
+
+Considering your answer to the previous question, fit an appropriate model and include the Type 3 ANOVA table in your assignment. (4 pts) 
+
+```{r 2c_road_anova}
+# 2c. adjust contrast default
+options(contrasts = c("contr.sum", "contr.poly"))
+# 2c. fit two-way anova
+road_anova <- lm(cracks ~ roadway + treatment*concentration,
+                 data = road_data)
+# 2c. call anova type 3 table
+car::Anova(road_anova, type = 3)
+```
+
+## Question D: Blocking
+
+Discuss the value of the blocking for this data. Justify your response with appropriate test-statistic(s) and p-value(s).
+
+```{r 2d_road_anova_tidy}
+road_anova_tidy <- broom::tidy(car::Anova(road_anova, type = 3))
+```
+
+Blocking is effective in this study, _F_ = `r round(road_anova_tidy$statistic[2], 3)`, _p_ = `r round(road_anova_tidy$p.value[2], 3)`.
+
+## Question E: Compare concentration by treatment
+
+Compare mean response for High vs Low Concentration separately for each Treatment. This can be done using `emmeans`. Include the `emmeans contrasts` output in your assignment, but also (briefly) summarize your findings. (4 pts)
+
+```{r 2e_road_emmeans1}
+# 2e. extract emmeans for high vs low concentration by treatment
+road_con_emmeans <- emmeans::emmeans(road_anova, 
+                                     pairwise ~ concentration|treatment)
+# 2e. only show contrasts - diff between concen level for each trt
+road_con_emmeans$contrasts
+```
+
+For each treatment type, there was a higher number of cracks in the road for high concentrations, compared to low concentrations.
+
+## Question F: Compare treatment by concentration
+
+Compare mean responses between the 3 Treatments separately for each Concentration. This can be done using `emmeans` (default Tukey adjustment is fine). Include the `emmeans contrasts` output in your assignment, but also (briefly) summarize your findings for Concentration = Low. (4 pts)
+
+```{r 2f_road_emmeans2}
+# 2f. extract emmeans for each trt by concentration level
+road_trt_emmeans <- emmeans::emmeans(road_anova, 
+                                     pairwise ~ treatment|concentration)
+# 2f. only show contrasts - diff between trt for each concen level
+road_trt_emmeans$contrasts
+```
+
+At a low concentration level, there were differences in damage for calcium chloride vs. sand and sodium chloride vs. sand, such that roads treated with calcium chloride or sodium chloride had more cracks than those treated with sand. There was no difference in damage between calcium chloride and sodium chloride.
 
 \newpage
 
