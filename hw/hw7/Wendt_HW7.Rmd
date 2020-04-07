@@ -68,7 +68,6 @@ Fit a one-way ANOVA model to the data using group as the predictor. Construct th
 ```{r 1b_pcb_1anova}
 # 1b. change contrast defaults
 options(contrasts = c("contr.sum", "contra.poly"))
-contrasts(pcb_data$group)
 # 1b. construct one-way anova model with group as predictor
 pcb_1anova <- lm(pcb ~ group, data = pcb_data)
 car::Anova(pcb_1anova, type = 3)
@@ -92,7 +91,7 @@ Fit a two-way ANOVA model to the data using sex and species as predictors. Be su
 options(contrasts = c("contr.sum", "contra.poly"))
 # 1d. build two-way anova model
 pcb_2anova <- lm(pcb ~ sex*species, data = pcb_data)
-car::Anova(pcb_2anova)
+car::Anova(pcb_2anova, type = 3)
 ```
 
 ## Question E: Sex/species emmeans
@@ -163,7 +162,7 @@ with(interaction.plot(x.factor = treatment,
 
 Describe the blocking and treatment structure.
 
-The study examined the amount of damage (i.e., number of cracks per mile) associated with three methods for clearing snow and ice from roads (i.e., sodium chloride, calcium chloride, and sand). A _randomized block design_ (i.e., traffic volume from previous winter) was used to try to minimize the effect of traffic on road damage. Each of the six _treatments_ (i.e., high or low levels of each of the three aforementioned substances) was _randomly assigned_ to five roads. Based on the textbook description, the treatment structure can be considered one factor (treatment) with six levels (high and low levels of each of the three methods); however, according to data structure, this has a factorial design of treatment (3 levels) and concentration (2 levels) with blocking by roadway (5 roadways).
+The study examined the amount of damage (i.e., number of cracks per mile) associated with three methods for clearing snow and ice from roads (i.e., sodium chloride, calcium chloride, and sand). A _randomized block design_ (i.e., traffic volume from previous winter) was used to try to minimize the effect of traffic on road damage. Each of the six _treatments_ (i.e., high or low levels of each of the three aforementioned substances) was _randomly assigned_ to five roads. Based on the textbook description, the treatment structure can be considered one factor (treatment) with six levels (high and low levels of each of the three methods); according to data structure, this has a factorial design of treatment (3 levels) and concentration (2 levels) with blocking by roadway (5 roadways).
 
 ## Question C: Fit model
 
@@ -187,7 +186,7 @@ Discuss the value of the blocking for this data. Justify your response with appr
 road_anova_tidy <- broom::tidy(car::Anova(road_anova, type = 3))
 ```
 
-Blocking is effective in this study, _F_ = `r round(road_anova_tidy$statistic[2], 3)`, _p_ = `r round(road_anova_tidy$p.value[2], 3)`.
+Blocking by roadway is effective in this study, _F_ = `r round(road_anova_tidy$statistic[2], 3)`, _p_ = `r round(road_anova_tidy$p.value[2], 3)`. This reduces the variability in outcomes attributed to a nuisance variable (roadway).
 
 ## Question E: Compare concentration by treatment
 
@@ -201,7 +200,7 @@ road_con_emmeans <- emmeans::emmeans(road_anova,
 road_con_emmeans$contrasts
 ```
 
-For each treatment type, there was a higher number of cracks in the road for high concentrations, compared to low concentrations.
+For each treatment type, there was a higher number of cracks in the road for high concentrations, compared to low concentrations, using $\alpha$ = 0.05.
 
 ## Question F: Compare treatment by concentration
 
