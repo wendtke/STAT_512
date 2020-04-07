@@ -1,0 +1,35 @@
+---
+title: "STAT 512 Homework 8"
+author: "Kathleen Wendt"
+date: "04/14/2020"
+output: pdf_document
+---
+
+```{r packages, include = FALSE}
+# load packages
+library(tidyverse)
+library(janitor)
+library(kableExtra)
+# library(car)
+# library(emmeans)
+# library(broom)
+```
+
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(fig.width = 6, 
+                      fig.height = 4, 
+                      fig.path = "figs/",
+                      echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+
+
+\newpage
+
+# Appendix
+
+```{r show_code, ref.label = knitr::all_labels(), echo = TRUE, eval = FALSE}
+```
