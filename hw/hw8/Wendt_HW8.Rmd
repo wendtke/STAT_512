@@ -25,7 +25,87 @@ knitr::opts_chunk$set(fig.width = 6,
                       message = FALSE)
 ```
 
+# Biomass Study
 
+A greenhouse study was done to examine the effect of 3 herbicides (A,B, or C) and 2 water regimes (1 = Low or 2 = High) for 2 plant types (Grass or Forb). The response variable is biomass. There are 3 reps per treatment combination for a total of 36 observations. Each observation was a potted plant. The 36 pots were randomly assigned without restriction to locations in the greenhouse. The data is available from Canvas as “Biomass.csv”.
+
+## Question 1: Plots
+
+Create two-way interaction plots separately for each level of Type. (4 pts) This can be done by first calculating treatment means (using aggregate or dplyr), then using code something like this:
+
+``` {r}
+library(ggplot2)
+qplot(x = Herb, y = Biomass, colour = Water, group = Water, data = SumStats) + geom_line() + facet_grid(. ~ Type)
+```
+
+## Question 2: Three-way model
+
+Fit the three-way model with all interactions. Include the Type 3 ANOVA table in your assignment. You should find evidence of a 3 way interaction.
+
+## Question 3: Assumptions
+
+Consider the diagnostics plots and discuss whether model assumptions are satisfied.
+
+## Question 4: Pairwise comparisons
+
+Use `emmeans` to calculate pairwise comparisons of Water (1 vs 2) for each level of Herb and Type. You can use code something like this:
+`emmeans(Model1, pairwise ~ Water|Herb*Type)`
+
+## Question 5: Two-way model
+
+Now fit a two-way model (including interaction) for Forb only. Include the Type 3 ANOVA table in your assignment.
+
+## Question 6: Assumptions
+
+Consider the diagnostics plots and discuss whether model assumptions are satisfied.
+
+## Question 7: Pairwise comparisons
+
+Use `emmeans` to calculate pairwise comparisons of Water (1 vs 2) for each level of Herb.
+
+## Question 8: LSD
+
+Calculate the LSD value (ME for difference between means) corresponding to the comparisons from the previous question. Show your work for full credit. _Hint: See ExpDesign2 slide 81. Recall that you can check your calculation using the SE value given in the output from the previous question._
+
+## Question 9: Pairwise comparisons
+
+Use `emmeans` to calculate the comparison of Water (1 vs 2) averaging over the levels of Herb.
+
+## Question 10: LSD
+
+Calculate the LSD value (ME for difference between means) corresponding to the comparisons from the previous question. Show your work for full credit. _See hints from #8._
+
+## Question 11: Power
+
+Comparing your LSD values from questions #8 (interaction comparison) and #10 (main effect comparison), which comparison has higher power? Briefly discuss.
+
+## Question 12: Two-way model
+
+Now fit a two-way model (including interaction) for Grass only. Include the Type 3 ANOVA table in your assignment.
+
+## Question 13: Assumptions
+
+Consider the diagnostics plots and discuss whether model assumptions are satisfied.
+
+## Question 14: Pairwise comparisons
+
+Use `emmeans` to calculate pairwise comparisons of Water (1 vs 2) for each level of Herb.
+
+## Question 15: Reflection
+
+Would it be appropriate to calculate the comparison of Water (1 vs 2) averaging over the levels of Herb? Briefly discuss.
+
+## Question 16: Model comparison
+
+Now we compare the three-way model to the separate two-way models. The comparisons from #7 and #14 were also considered in #4. Considering the corresponding results from the combined analysis (#4) versus the split analysis (#7, #14), briefly discuss what is the same and what is different. Specifically, consider the estimated difference, corresponding SE and df. (4 pts)
+
+## Question 17: Reflection
+
+Give (at least) one reason why we might prefer to split the analysis by Type (running separate 2way ANOVAs for Grass and Forb). Your answer should be based on the output.
+
+## Question 18: Reflection
+
+Give (at least) one weakness of splitting the analysis “by type” as compared to the full 3-way ANOVA model.
 
 \newpage
 
