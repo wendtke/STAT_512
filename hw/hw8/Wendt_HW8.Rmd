@@ -36,7 +36,6 @@ bio_data <- readr::read_csv("data/Biomass.csv") %>%
   dplyr::mutate(type = as.factor(type), 
                 herb = as.factor(herb),
                 water = as.factor(water))
-tibble::glimpse(bio_data)
 ```
 
 ## Question 1: Plots
@@ -52,9 +51,6 @@ bio_table <- bio_data %>%
     mean_biomass = mean(biomass),
     sd_biomass = sd(biomass)
     )
-
-# 1. kable table
-kableExtra::kable(bio_table)
 ```
 
 ``` {r 1_plots}
@@ -100,16 +96,16 @@ Normal Q-Q: Residuals do not tightly follow line. Heavy tails. Assumption of nor
 ## Question 4: Pairwise comparisons
 
 Use `emmeans` to calculate pairwise comparisons of Water (1 vs 2) for each level of Herb and Type. You can use code something like this:
-`emmeans(Model1, pairwise ~ Water|Herb*Type)`
+`emmeans(Model1, pairwise ~ Water|Herb*Type)`.
 
 ```{r 4_pairs_water}
 # 4. pairwise comparisons of water for each herb and type level/combo
 bio_water_pairs <- emmeans::emmeans(bio_anova_3, pairwise ~ water|herb*type)
 # 4. kable emmeans and contrasts
-kableExtra::kable(bio_water_pairs)
+kableExtra::kable(bio_water_pairs$contrasts)
 ```
 
-## Question 5: Two-way model
+## Question 5: Forb two-way model
 
 Now fit a two-way model (including interaction) for Forb only. Include the Type 3 ANOVA table in your assignment.
 
@@ -125,7 +121,7 @@ forb_anova <- lm(biomass ~ herb*water,
 kableExtra::kable(broom::tidy(car::Anova(forb_anova, type = 3)))
 ```
 
-No interaction indicated at $\alpha$ = 0.05.
+No evidence for interaction between herbicide and water pattern for forb.
 
 ## Question 6: Assumptions
 
@@ -136,7 +132,7 @@ Consider the diagnostics plots and discuss whether model assumptions are satisfi
 plot(forb_anova)
 ```
 
-Residuals vs Fitted: Residuals evenly distributed across level but still some cluster. Assumptions of linearity and constant variance seem reasonable.
+Residuals vs Fitted: Residuals evenly distributed across level but still cluster. Assumptions of linearity and constant variance seem reasonable, but there systematic differences in variance across levels.
 
 Normal Q-Q: Residuals close to line. Assumption of normality is supported.
 
@@ -148,21 +144,25 @@ Use `emmeans` to calculate pairwise comparisons of Water (1 vs 2) for each level
 # 7. pairwise comparisons of water for each herb level
 forb_water_pairs <- emmeans::emmeans(forb_anova, pairwise ~ water|herb)
 # 7. kable emmeans and contrasts
-kableExtra::kable(forb_water_pairs)
+kableExtra::kable(forb_water_pairs$contrasts)
 ```
 
-## Question 8: LSD - REVISIT
+## Question 8: Forb LSD
 
 Calculate the LSD value (ME for difference between means) corresponding to the comparisons from the previous question. Show your work for full credit. _Hint: See ExpDesign2 slide 81. Recall that you can check your calculation using the SE value given in the output from the previous question._
 
-ME = TV x SE
+LSD = 0.40
 
-```{r}
-qt(0.975, 3.77, 12)
+See code appendix for hand calculation.
 
-3.77*0.187
+```{r 8_forb_lsd, include = FALSE}
+# 8. calculate t critical value in R
+qt(0.975, 12)
+# 8. long-hand
+2.178*(sqrt((2*(0.6268/12)/3)))
+# 8. short-cut with se from contrasts output
+2.178*0.187
 ```
-
 
 ## Question 9: Pairwise comparisons
 
@@ -172,20 +172,33 @@ Use `emmeans` to calculate the comparison of Water (1 vs 2) averaging over the l
 # 9. pairwise comparisons of water averaging over herb 
 forb_water_pairs_avg <- emmeans::emmeans(forb_anova, pairwise ~ water)
 # 9. kable emmeans and contrasts
-kableExtra::kable(forb_water_pairs_avg)
+kableExtra::kable(forb_water_pairs_avg$contrasts)
 ```
 
-## Question 10: LSD - REVISIT
+## Question 10: Forb (avg) LSD
 
-Calculate the LSD value (ME for difference between means) corresponding to the comparisons from the previous question. Show your work for full credit. _See hints from #8._
+Calculate the LSD value (ME for difference between means) corresponding to the comparisons from the previous question. Show your work for full credit. 
+
+LSD = 0.23
+
+See code appendix for hand calculation.
+
+```{r 10_forb_avg_lsd, include = FALSE}
+# 10. calculate t critical value in R
+qt(0.975, 12)
+# 10. long-hand 
+2.178*(sqrt((2*(0.6268/12)/9)))
+# 10. short-cut with se from contrasts output
+2.178*0.108
+```
 
 ## Question 11: Power
 
 Comparing your LSD values from questions #8 (interaction comparison) and #10 (main effect comparison), which comparison has higher power? Briefly discuss.
 
-As sample size increases and margin of error decreases, power increases. 
+As sample size increases and margin of error decreases, power increases; therefore, the main effect comparison (#10) has higher power. By averaging across herbicide, there were more degrees of freedom in the second model.
 
-## Question 12: Two-way model 
+## Question 12: Grass two-way model 
 
 Now fit a two-way model (including interaction) for Grass only. Include the Type 3 ANOVA table in your assignment.
 
@@ -201,7 +214,7 @@ grass_anova <- lm(biomass ~ herb*water,
 kableExtra::kable(broom::tidy(car::Anova(grass_anova, type = 3)))
 ```
 
-Evidence of interaction.
+Evidence of interaction between herbicide and water pattern for grass.
 
 ## Question 13: Assumptions
 
@@ -224,20 +237,20 @@ Use `emmeans` to calculate pairwise comparisons of Water (1 vs 2) for each level
 # 7. pairwise comparisons of water for each herb level
 grass_water_pairs <- emmeans::emmeans(grass_anova, pairwise ~ water|herb)
 # 7. kable emmeans and contrasts
-kableExtra::kable(grass_water_pairs)
+kableExtra::kable(grass_water_pairs$contrasts)
 ```
 
 ## Question 15: Reflection
 
 Would it be appropriate to calculate the comparison of Water (1 vs 2) averaging over the levels of Herb? Briefly discuss.
 
-No, it would not be appropriate to average over herbicide because there is evidence of an interaction between water patter and herbicide among plant type `grass`.
+No, it would not be appropriate to average over herbicide because there is evidence of an interaction between water pattern and herbicide among plant type `grass`. 
 
 ## Question 16: Model comparison
 
 Now we compare the three-way model to the separate two-way models. The comparisons from #7 and #14 were also considered in #4. Considering the corresponding results from the combined analysis (#4) versus the split analysis (#7, #14), briefly discuss what is the same and what is different. Specifically, consider the estimated difference, corresponding SE and df. (4 pts)
 
-The combined model (#4) had 24 degrees of freedom, whereas the split-type models (#7 and #14) each had 12 degrees of freedom. Split model 1 for `forb` (#7) had the smallest standard errors, but split model 2 for `grass` (#14) had the largest standard errors. The estimated marginal means and estimated differences across the models (i.e., combined vs. split 1; combined vs. split 2) were the same.
+The combined model (#4) had 24 degrees of freedom, whereas the split-type models (#7 and #14) each had 12 degrees of freedom. Split model 1 for `forb` (#7) had the smallest standard errors; split model 2 for `grass` (#14) had the largest standard errors. The estimated marginal means and estimated differences across the models (i.e., combined vs. split 1; combined vs. split 2) were the same.
 
 ## Question 17: Reflection
 
