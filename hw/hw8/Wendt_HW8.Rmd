@@ -202,15 +202,15 @@ As sample size increases and margin of error decreases, power increases; therefo
 
 Now fit a two-way model (including interaction) for Grass only. Include the Type 3 ANOVA table in your assignment.
 
-```{r 5_grass_anova}
-# 5. subset data to grass type only
+```{r 12_grass_anova}
+# 12. subset data to grass type only
 grass_data <- bio_data %>% dplyr::filter(type == "Grass")
-# 5. adjust contrast default
+# 12. adjust contrast default
 options(contrasts = c("contr.sum", "contr.poly"))
-# 5. fit two-way anova model for grass data
+# 12. fit two-way anova model for grass data
 grass_anova <- lm(biomass ~ herb*water,
                  data = grass_data)
-# 5. call tidy anova type 3 table
+# 12. call tidy anova type 3 table
 kableExtra::kable(broom::tidy(car::Anova(grass_anova, type = 3)))
 ```
 
@@ -221,7 +221,7 @@ Evidence of interaction between herbicide and water pattern for grass.
 Consider the diagnostics plots and discuss whether model assumptions are satisfied.
 
 ```{r 13_diagnostics, include = FALSE}
-# 6. diagnostic plots for two-way anova model of type grass
+# 13. diagnostic plots for two-way anova model of type grass
 plot(grass_anova)
 ```
 
@@ -234,9 +234,9 @@ Normal Q-Q: Residuals close to line but tails look heavy. Assumption of normalit
 Use `emmeans` to calculate pairwise comparisons of Water (1 vs 2) for each level of Herb.
 
 ```{r 14_pairs_water}
-# 7. pairwise comparisons of water for each herb level
+# 14. pairwise comparisons of water for each herb level
 grass_water_pairs <- emmeans::emmeans(grass_anova, pairwise ~ water|herb)
-# 7. kable emmeans and contrasts
+# 14. kable emmeans and contrasts
 kableExtra::kable(grass_water_pairs$contrasts)
 ```
 
@@ -262,7 +262,7 @@ Forb and Grass had very different patterns of mean biomass by water pattern and 
 
 Give (at least) one weakness of splitting the analysis “by type” as compared to the full 3-way ANOVA model.
 
-Splitting the data reduces dfResid, therefore reducing power. In this case, the three-way model had 24 dfResid, but each two-way model only had 12 dfResid.
+Splitting the data reduces dfResid, thereby reducing power. In this case, the three-way model had 24 dfResid, but each two-way model only had 12 dfResid.
 
 \newpage
 
