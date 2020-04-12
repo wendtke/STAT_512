@@ -1,0 +1,99 @@
+---
+title: "STAT 512 Homework 9"
+author: "Kathleen Wendt"
+date: "04/28/2020??"
+output: pdf_document
+---
+
+```{r packages, include = FALSE}
+# load packages
+library(tidyverse)
+library(janitor)
+# library(kableExtra)
+# library(car)
+# library(broom)
+# library(emmeans)
+```
+
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(fig.width = 6, 
+                      fig.height = 4, 
+                      fig.path = "figs/",
+                      echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+# Part 1: O & L data
+
+For this problem use the data described in Ott & Longnecker problem 19.23 (p 1080 in the 7th Edition). We will verify that this is a BIBD in parts A, B. Note that Person acts as the blocking variable.
+
+## Question 1
+
+Identify t, r, b and k. (4 pts) Hint: Use the `table()` function.
+
+## Question 2
+
+Compute $\lambda$ (and make sure it is an integer).
+
+## Question 3
+
+Treat Person (block) as fixed. Fit an appropriate model (using `lm()`) and include the Type 3 ANOVA table (using `Anova(, type = 3)`) in your assignment.
+
+## Question 4
+
+Treat Person (block) as fixed. Calculate `emmeans` and Tukey adjusted p-values for their differences. Summarize using a `cld` display and include it in your assignment. (4 pts)
+
+## Question 5
+
+Treat Person (block) as fixed. Calculate Tukey’s HSD value by hand. Hint: See the ExpDesign 3 slide 104. Recall that you can check your calculation using the SE value from the previous question.
+
+## Question 6
+
+_Note: Be sure to detach the emmeans package. Then load the lme4, lmerTest, pbkrtest and emmeans packages._
+
+Treat Person (block) as random. Fit an appropriate model (using `lmer()` from `lme4` package) and include the Type 3 ANOVA table (using `anova(, ddf=”Kenward-Roger”)`)
+
+## Question 7
+
+Treat Person (block) as random. Calculate emmeans and Tukey adjusted p-values for their differences. Summarize using a cld display and include it in your assignment. (4 pts)
+
+## Question 8
+
+Treat Person (block) as random. Comparing your results from #4 and #7, you should find that the emmeans are not the same. Is the ranking of the treatments the same? Are the conclusions about significant differences the same?
+
+# Part 2: Variety
+
+In a variety trial, a total of 7 varieties (Var) of wheat are considered. For each variety, n=3 reps are randomly assigned to positions in a single field. The response variable is the Yield at the end of the trial. The data is available from Canvas as “Varieties.csv”. _Note: You may need to detach the emmeans package and then reload it for this group of questions._
+
+## Question 9
+
+Treat Variety as fixed and fit a one-way ANOVA model using `lm()`. Fit an appropriate model and construct the ANOVA table (using `Anova(, type = 3)`).
+
+## Question 10
+
+In the ANOVA table, you should find a test corresponding to Variety. Specifically, F = 18.26 and p-value <.0001. State the null hypothesis for this test.
+
+## Question 11
+
+Give the emmeans for each variety.
+
+## Question 12
+
+Treat Variety as random and fit a one-way random effects model using `lmer()`. Fit an appropriate model and include “Random Effects” table (giving the variance component estimates) in your assignment.
+
+## Question 13
+
+Use the `rand()` function to get a test corresponding to Variety. Specifically, Chi.sq = 19 and p-value < 0.0001. State the null hypothesis for this test.
+
+## Question 14
+
+Give the BLUPs for each variety. Remember to include the intercept in the BLUP estimation.
+
+\newpage
+
+# Appendix
+
+```{r show_code, ref.label = knitr::all_labels(), echo = TRUE, eval = FALSE}
+```
