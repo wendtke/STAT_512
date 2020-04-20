@@ -1,7 +1,7 @@
 ---
 title: "STAT 512 Homework 9"
 author: "Kathleen Wendt"
-date: "04/28/2020??"
+date: "04/21/2020"
 output: pdf_document
 ---
 
