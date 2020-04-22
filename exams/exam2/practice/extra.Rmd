@@ -15,11 +15,12 @@ library(lmerTest)
 library(emmeans)
 ```
 
-# Plants
+# Part 1: Plants
 
 An investigator is interested in comparing the expression of a certain gene for plants grown under 2 different Conditions (Trt and Ctrl). 4 seedlings were randomly assigned to the Ctrl condition and 4 seedlings were randomly assigned to the Trt condition. So, there are 4 Plants per Condition. At the end of the study period, an RNA sample was obtained from each plant and split into triplicates (labeled Rep in the data). Each sample was analyzed using RT PCR and gene expression (Y) was measured. Due to the triplicates, there were 3 observations for each Plant for a total of 24 observations (2 x 4 x 3). Note: We will consider Condition to be fixed and Plant to be random. The data is available from Canvas as “Plants.csv”
 
 ```{r plant_data}
+# read and prepare plant data
 plant_data <- readr::read_csv("data/Plants.csv") %>% 
   janitor::clean_names() %>% 
   dplyr::mutate(condition = as.factor(condition),
@@ -27,13 +28,13 @@ plant_data <- readr::read_csv("data/Plants.csv") %>%
                 rep = as.factor(rep))
 ```
 
-## Question 1: Design
+## 1A: Design
 
 Are Plant and Condition crossed or nested? If nested, be sure to indicate the “direction” of the nesting.
 
 Nested. Plant is nested within Condition.
 
-## Question 2: Nested mixed effects model
+## 1B: Nested mixed effects model
 
 Considering your answer to A, fit an appropriate model. Include the variance parameter estimates and Type 3 ANOVA table in your assignment.
 
@@ -46,17 +47,18 @@ summary(plant_mixed_lm)
 anova(plant_mixed_lm, ddf = "Kenward-Roger")
 ```
 
-## Question 3: Conclusion
+## 1C: Conclusion
 
 Using the model from part B, can we conclude there is a difference between the mean responses for the two Conditions? Provide an estimate of the difference and a p-value. Hint: Use emmeans.
 
 ```{r plant_mixed_em}
+# extract emmeans for mixed effects model
 emmeans::emmeans(plant_mixed_lm, pairwise ~ condition)
 ```
 
 Fail to reject null hypothesis. No difference in mean response by condition with an estimated difference of 1.88 units, _p_ = 0.14.
 
-## Question 4: t-test
+## 1D: t-test
 
 We will rerun the analysis using a different approach. We will start by averaging over the triplicates and run a two-sample t-test (assuming equal variance) with n = 4 observations per Condition. In your assignment, provide an estimate of the difference and a p-value. Note: Using option var.equal = TRUE, returns the two sample t-test assuming equal variance.
 
@@ -65,11 +67,107 @@ We will rerun the analysis using a different approach. We will start by averagin
 plant_avg_data <- plant_data %>% 
   dplyr::group_by(condition, plant) %>% 
   dplyr::summarize(mean = mean(y))
-
+# conduct paired samples t-test assuming equal variances
 t.test(mean ~ condition, 
        var.equal = TRUE, 
        data = plant_avg_data)
 ```
 
+The estimate of the difference is 1.88 units, and the p-value is 0.14.
 
+## 1E: Compare
 
+Compare your result from part D to the test from part C. Are the results the same?
+
+Yes.
+
+## 1F: Independence
+
+A colleague suggests that you “just do a two-sample t-test with n=12 observations per condition."
+
+Would this analysis be appropriate? Justify your response.
+
+No! Triplicates from the same plant cannot be considered independent observations.
+
+## 1G: Independent samples t-test
+
+Would the analysis from #6 give the same results as part C? Hint: Try it and compare the results!
+
+```{r plant_ttest2}
+# conduct indepndent samples t-test assuming equal variances
+t.test(y ~ condition, var.equal = TRUE, data = plant_data)
+```
+
+No. The estimated difference matches parts C and D but the p-value = 0.0156.
+
+# Part 2: Seed weights
+
+A split-plot experiment was conducted on sorghum with two treatment factors: plant Density and Hybrid. A total of 4 blocks were used in the study. Within each block, the four levels of plant Density (10, 15, 25 and 40 plants per meter of row) were randomly assigned to whole plots. Then within each whole plot, the three Hybrids (A, B, C) were randomly assigned to subplots. The response (Y) is the weight of the seed per plant in grams. The data are given in the file “SeedWeight.csv” on Canvas.
+
+```{r seed_data}
+# read and prepare seed data
+seed_data <- readr::read_csv("data/SeedWeight.csv") %>% 
+  janitor::clean_names() %>% 
+  dplyr::mutate(hybrid = as.factor(hybrid),
+                block = as.factor(block),
+                density = as.factor(density))
+```
+
+## 2A: Plot
+
+Create an interaction plot (for Density and Hybrid) and include it in your assignment. For consistency, put `Density` on the horizontal axis.
+
+```{r seed_plot}
+# summarize mean response by density and hybrid
+seed_avg_data <- seed_data %>% 
+  dplyr::group_by(density, hybrid) %>% 
+  dplyr::summarize(mean_y = mean(y))
+# build interaction plot for density and hybrid
+qplot(x = density, 
+      y = mean_y, 
+      group = hybrid, 
+      color = hybrid, 
+      data = seed_avg_data) +
+  geom_line() +
+  geom_point()
+```
+
+## 2B: Split-plot mixed effects model
+
+Fit an appropriate model using `lmer()`. Include the variance component estimates and Type 3 ANOVA table in your assignment.
+
+```{r seed_mixed_lm}
+# build seed mixed effects split-plot model
+seed_split_lm <- lmer(y ~ density*hybrid + (1|block) + (1|block:density), 
+                      data = seed_data)
+summary(seed_split_lm)
+anova(seed_split_lm, ddf = "Kenward-Roger")
+```
+
+## 2C: Pairwise comparisons of density
+
+You should find that the Density*Hybrid interaction is not significant. Use
+`emmeans()` to run pairwise comparisons of Density levels (averaging over
+Hybrids) and comparisons of Hybrids (averaging over Density levels).
+
+```{r seed_em}
+# compare density levels, averaging over hybrid
+emmeans::emmeans(seed_split_lm, pairwise ~ density)
+# compare hybrid levels, averaging over density
+emmeans::emmeans(seed_split_lm, pairwise ~ hybrid)
+```
+
+## 2D: Accuracy
+
+On slide 61 (Random2 notes), it says “the accuracy on factor B (sub-plot factor) is better than the accuracy of comparisons on factor A (whole-plot factor)”. Looking at your results from part B, what evidence do we see to support this statement (for this dataset).
+
+The standard error when comparing densities is larger than the SE for hybrids.
+
+## 2E: 
+
+Use `plot()` to generate the plot of residuals versus fitted values. You do not have to include this plot in your assignment, just comment on what you see.
+
+```{r diagnostics}
+plot(seed_split_lm)
+```
+The plot of residuals vs. fitted values shows a megaphone shape. This indicates that the assumption of equal variance is violated. We could try a transformation.
