@@ -1,0 +1,11 @@
+---
+title: "STAT 512 Exam 2 Extra Practice"
+author: "Kathleen Wendt"
+date: "4/22/2020"
+output: pdf_document
+---
+
+# Plants
+
+An investigator is interested in comparing the expression of a certain gene for plants grown under 2 different Conditions (Trt and Ctrl). 4 seedlings were randomly assigned to the Ctrl condition and 4 seedlings were randomly assigned to the Trt condition. So, there are 4 Plants per Condition. At the end of the study period, an RNA sample was obtained from each plant and split into triplicates (labeled Rep in the data). Each sample was analyzed using RT PCR and gene expression (Y) was measured. Due to the triplicates, there were 3 observations for each Plant for a total of 24 observations (2 x 4 x 3). Note: We will consider Condition to be fixed and Plant to be random. The data is available from Canvas as “Plants.csv”
+
