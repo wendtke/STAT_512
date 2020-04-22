@@ -5,91 +5,230 @@ date: "04/21/2020"
 output: pdf_document
 ---
 
-```{r packages, include = FALSE}
+```{r med_packages, include = FALSE}
 # load packages
+library(readxl)
 library(tidyverse)
 library(janitor)
-# library(kableExtra)
-# library(car)
-# library(broom)
-# library(emmeans)
+library(car)
+library(emmeans)
 ```
 
 ```{r global_options, include = FALSE}
 # set global options
-knitr::opts_chunk$set(fig.width = 6, 
-                      fig.height = 4, 
-                      fig.path = "figs/",
-                      echo = FALSE, 
+knitr::opts_chunk$set(echo = FALSE, 
                       warning = FALSE, 
                       message = FALSE)
 ```
 
-# Part 1: O & L data
+# Part 1: Antihistamine data
 
-For this problem use the data described in Ott & Longnecker problem 19.23 (p 1080 in the 7th Edition). We will verify that this is a BIBD in parts A, B. Note that Person acts as the blocking variable.
+For this problem use the data described in Ott & Longnecker problem 19.23 (p 1080 in the 7th Edition). We will verify that this is a BIBD in parts A and B. Note that Person acts as the blocking variable.
 
-## Question 1
+```{r allergy_data}
+# read and prepare allergy/antihistamine data
+allergy_data <- readxl::read_xlsx("data/ex19-23.xlsx") %>%
+  janitor::clean_names() %>% 
+  dplyr::mutate(person = as.factor(person),
+                treatments = as.factor(treatments))
+```
 
-Identify t, r, b and k. (4 pts) Hint: Use the `table()` function.
+## Question 1: BIBD components
 
-## Question 2
+Identify t, r, b and k. (4 pts)
+
+t = 6 antihistamine treatments 
+
+r = 5 replicates of each treatment
+
+b = 10 blocks (patients)
+
+k = 3 natural block size (treatments per patient)
+
+N = 30 observations
+
+tr = bk 
+
+30 = 30
+
+## Question 2: BIBD lambda
 
 Compute $\lambda$ (and make sure it is an integer).
 
-## Question 3
+$\lambda$ = r(k-1)/(t-1) = 5(3-1)/(6-1) = 10/5 = 2
+
+Based on Q1 and Q2, this is a BIBD.
+
+## Question 3: BIBD with block as fixed
 
 Treat Person (block) as fixed. Fit an appropriate model (using `lm()`) and include the Type 3 ANOVA table (using `Anova(, type = 3)`) in your assignment.
 
-## Question 4
+```{r 3_med_fixed_bibd}
+# 3. treat person as fixed in bibd lm 
+med_bibd_fixed <- lm(area_red ~ treatments + person, data = allergy_data)
+# 3. call anova type 3 table on fixed bibd lm
+car::Anova(med_bibd_fixed, type = 3)
+```
 
-Treat Person (block) as fixed. Calculate `emmeans` and Tukey adjusted p-values for their differences. Summarize using a `cld` display and include it in your assignment. (4 pts)
+## Question 4: Fixed BIBD CLD
 
-## Question 5
+Calculate `emmeans` and Tukey adjusted p-values for their differences. Summarize using a `cld` display and include it in your assignment. (4 pts)
 
-Treat Person (block) as fixed. Calculate Tukey’s HSD value by hand. Hint: See the ExpDesign 3 slide 104. Recall that you can check your calculation using the SE value from the previous question.
+```{r 4_med_emmeans}
+# 4. emmeans for fixed bibd lm
+med_bibd_fixed_em <- emmeans::emmeans(med_bibd_fixed, pairwise ~ treatments)
+# 4. cld for emmeans
+emmeans::cld(med_bibd_fixed_em$emmeans)
+```
 
-## Question 6
+## Question 5: Tukey's HSD
 
-_Note: Be sure to detach the emmeans package. Then load the lme4, lmerTest, pbkrtest and emmeans packages._
+Calculate Tukey’s HSD value by hand. 
 
-Treat Person (block) as random. Fit an appropriate model (using `lmer()` from `lme4` package) and include the Type 3 ANOVA table (using `anova(, ddf=”Kenward-Roger”)`)
+Tukey's HSD = 12.63
 
-## Question 7
+See code appendix for hand calculations.
 
-Treat Person (block) as random. Calculate emmeans and Tukey adjusted p-values for their differences. Summarize using a cld display and include it in your assignment. (4 pts)
+```{r 5_med_hsd, include = FALSE}
+# 5. calculate tukey critical value in R
+qtukey(0.95, 6, 15)
+# 5. calculate se diff in means "by hand"
+sqrt(2*3*(453.61/15)/(6*2))
+# 5. calculate tukey hsd "by hand"
+4.595*(sqrt((453.61/15)/4))
+# 5. short-cut with se from contrasts output
+4.595*3.89/sqrt(2)
+```
 
-## Question 8
+## Question 6: BIBD with block as random
 
-Treat Person (block) as random. Comparing your results from #4 and #7, you should find that the emmeans are not the same. Is the ranking of the treatments the same? Are the conclusions about significant differences the same?
+```{r med_packages2, include = FALSE}
+# detach emmeans
+detach(package:emmeans)
+# load random effects testing packages; lmer masked: lme4 -> lmerTest
+library(lme4)
+library(lmerTest)
+# reload emmeans to work correctly with lmer
+library(emmeans)
+```
 
-# Part 2: Variety
+Treat Person (block) as random. Fit an appropriate model (using `lmer()` from `lme4` package) and include the Type 3 ANOVA table (using `anova(, ddf=”Kenward-Roger”)`).
 
-In a variety trial, a total of 7 varieties (Var) of wheat are considered. For each variety, n=3 reps are randomly assigned to positions in a single field. The response variable is the Yield at the end of the trial. The data is available from Canvas as “Varieties.csv”. _Note: You may need to detach the emmeans package and then reload it for this group of questions._
+```{r 6_med_bibd_rand}
+# 6. treat person as random in allergy bibd 
+med_bibd_rand <- lmer(area_red ~ treatments + (1|person), data = allergy_data)
+# 6. call anova type 3 table on bibd random
+anova(med_bibd_rand, ddf = "Kenward-Roger")
+```
 
-## Question 9
+## Question 7: Random BIBD CLD
+
+Calculate emmeans and Tukey adjusted p-values for their differences. Summarize using a cld display and include it in your assignment. (4 pts)
+
+```{r 7_med_bibd_rand_em}
+# 7. emmeans for random effects bibd lm
+med_bibd_rand_em <- emmeans::emmeans(med_bibd_rand, pairwise ~ treatments)
+# 7. cld for emmeans
+emmeans::cld(med_bibd_rand_em$emmeans)
+```
+
+## Question 8: Fixed vs. random 
+
+Comparing your results from #4 and #7, you should find that the emmeans are not the same. Is the ranking of the treatments the same? Are the conclusions about significant differences the same?
+
+The estimated marginals means differ between the fixed effects and random effects models, but the ranking of the treatments and the conclusions about differences between treatments are the same.
+
+# Part 2: Wheat variety data
+
+In a variety trial, a total of 7 varieties (Var) of wheat are considered. For each variety, n = 3 reps are randomly assigned to positions in a single field. The response variable is the Yield at the end of the trial. The data is available from Canvas as “Varieties.csv”. 
+
+```{r wheat_packages, include = FALSE}
+# detach all additional packages in session thus far
+pacman::p_unload(pacman::p_loaded(), character.only = TRUE)
+# load packages (again)
+library(tidyverse)
+library(janitor)
+library(car)
+library(emmeans)
+library(kableExtra)
+```
+
+```{r wheat_data}
+# read and prepare wheat variety data
+wheat_data <- readr::read_csv("data/Varieties.csv") %>% 
+  janitor::clean_names() %>% 
+  dplyr::mutate(var = as.factor(var))
+```
+
+## Question 9: Fixed effects model
 
 Treat Variety as fixed and fit a one-way ANOVA model using `lm()`. Fit an appropriate model and construct the ANOVA table (using `Anova(, type = 3)`).
 
-## Question 10
+```{r 9_wheat_fixed_lm}
+# 9. treat variety as fixed in wheat lm 
+wheat_fixed_lm <- lm(yield ~ var, data = wheat_data)
+# 9. call anova type 3 table on fixed wheat lm
+car::Anova(wheat_fixed_lm, type = 3)
+```
+
+## Question 10: Null hypothesis
 
 In the ANOVA table, you should find a test corresponding to Variety. Specifically, F = 18.26 and p-value <.0001. State the null hypothesis for this test.
 
-## Question 11
+No difference in yield by wheat variety.
+
+## Question 11: Estimated marginal means
 
 Give the emmeans for each variety.
 
-## Question 12
+```{r 11_wheat_fixed_lm_em}
+# 11. compute emmeans
+wheat_lm_em <- emmeans::emmeans(wheat_fixed_lm, pairwise ~ var)
+# 11. display emmeans
+kableExtra::kable(wheat_lm_em$emmeans)
+```
+
+## Question 12: Random effects model
 
 Treat Variety as random and fit a one-way random effects model using `lmer()`. Fit an appropriate model and include “Random Effects” table (giving the variance component estimates) in your assignment.
 
-## Question 13
+```{r wheat_packages2, include = FALSE}
+# detach emmeans
+detach(package:emmeans)
+# load random effects testing packages; lmer masked: lme4 -> lmerTest
+library(lme4)
+library(lmerTest)
+# reload emmeans to work correctly with lmer
+library(emmeans)
+```
+
+```{r 12_wheat_rand_lm}
+# 12. treat variety as random in wheat lm 
+wheat_rand_lm <- lmer(yield ~ (1|var), data = wheat_data)
+# 12. call summary on random wheat lm; type 3 anova table empty because 
+# intercept is only fixed effect
+summary(wheat_rand_lm)
+```
+
+## Question 13: Variation from variety
 
 Use the `rand()` function to get a test corresponding to Variety. Specifically, Chi.sq = 19 and p-value < 0.0001. State the null hypothesis for this test.
 
-## Question 14
+```{r 13_wheat_rand_var, include = FALSE}
+# 13. test potency/value of random-effect term (variety) in lm
+lmerTest::rand(wheat_rand_lm)
+```
+
+Null hypothesis: No additional variation from wheat type; $\sigma^2$ for variety = 0. 
+
+## Question 14: Best Linear Unbiased Predictors
 
 Give the BLUPs for each variety. Remember to include the intercept in the BLUP estimation.
+
+```{r 14_wheat_rand_blups}
+# 14. compute blups for wheat variety
+lme4::ranef(wheat_rand_lm)
+```
 
 \newpage
 
