@@ -5,7 +5,71 @@ date: "4/22/2020"
 output: pdf_document
 ---
 
+# Packages
+
+```{r packages}
+library(tidyverse)
+library(janitor)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+```
+
 # Plants
 
 An investigator is interested in comparing the expression of a certain gene for plants grown under 2 different Conditions (Trt and Ctrl). 4 seedlings were randomly assigned to the Ctrl condition and 4 seedlings were randomly assigned to the Trt condition. So, there are 4 Plants per Condition. At the end of the study period, an RNA sample was obtained from each plant and split into triplicates (labeled Rep in the data). Each sample was analyzed using RT PCR and gene expression (Y) was measured. Due to the triplicates, there were 3 observations for each Plant for a total of 24 observations (2 x 4 x 3). Note: We will consider Condition to be fixed and Plant to be random. The data is available from Canvas as “Plants.csv”
+
+```{r plant_data}
+plant_data <- readr::read_csv("data/Plants.csv") %>% 
+  janitor::clean_names() %>% 
+  dplyr::mutate(condition = as.factor(condition),
+                plant = as.factor(plant),
+                rep = as.factor(rep))
+```
+
+## Question 1: Design
+
+Are Plant and Condition crossed or nested? If nested, be sure to indicate the “direction” of the nesting.
+
+Nested. Plant is nested within Condition.
+
+## Question 2: Nested mixed effects model
+
+Considering your answer to A, fit an appropriate model. Include the variance parameter estimates and Type 3 ANOVA table in your assignment.
+
+```{r plant_mixed_lm}
+# build mixed effects model with fixed condition and random plant
+plant_mixed_lm <- lmer(y ~ condition + (1|condition:plant), data = plant_data)
+# call summary on model to review variance parameter estimates
+summary(plant_mixed_lm)
+# call anova on model for type 3 anova table - diff in gene expression?
+anova(plant_mixed_lm, ddf = "Kenward-Roger")
+```
+
+## Question 3: Conclusion
+
+Using the model from part B, can we conclude there is a difference between the mean responses for the two Conditions? Provide an estimate of the difference and a p-value. Hint: Use emmeans.
+
+```{r plant_mixed_em}
+emmeans::emmeans(plant_mixed_lm, pairwise ~ condition)
+```
+
+Fail to reject null hypothesis. No difference in mean response by condition with an estimated difference of 1.88 units, _p_ = 0.14.
+
+## Question 4: t-test
+
+We will rerun the analysis using a different approach. We will start by averaging over the triplicates and run a two-sample t-test (assuming equal variance) with n = 4 observations per Condition. In your assignment, provide an estimate of the difference and a p-value. Note: Using option var.equal = TRUE, returns the two sample t-test assuming equal variance.
+
+```{r plant_ttest}
+# calculate average response by condition and plant
+plant_avg_data <- plant_data %>% 
+  dplyr::group_by(condition, plant) %>% 
+  dplyr::summarize(mean = mean(y))
+
+t.test(mean ~ condition, 
+       var.equal = TRUE, 
+       data = plant_avg_data)
+```
+
+
 
