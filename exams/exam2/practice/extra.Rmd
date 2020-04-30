@@ -5,7 +5,12 @@ date: "4/22/2020"
 output: pdf_document
 ---
 
-# Packages
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
 
 ```{r packages}
 library(tidyverse)
@@ -83,9 +88,7 @@ Yes.
 
 ## 1F: Independence
 
-A colleague suggests that you “just do a two-sample t-test with n=12 observations per condition."
-
-Would this analysis be appropriate? Justify your response.
+A colleague suggests that you “just do a two-sample t-test with n=12 observations per condition." Would this analysis be appropriate? Justify your response.
 
 No! Triplicates from the same plant cannot be considered independent observations.
 
@@ -98,7 +101,7 @@ Would the analysis from #6 give the same results as part C? Hint: Try it and com
 t.test(y ~ condition, var.equal = TRUE, data = plant_data)
 ```
 
-No. The estimated difference matches parts C and D but the p-value = 0.0156.
+No. The estimated difference matches parts C and D, but the p-value = 0.0156. This is "psuedo-replication."
 
 # Part 2: Seed weights
 
@@ -163,11 +166,12 @@ On slide 61 (Random2 notes), it says “the accuracy on factor B (sub-plot facto
 
 The standard error when comparing densities is larger than the SE for hybrids.
 
-## 2E: 
+## 2E: Diagnostic plot
 
 Use `plot()` to generate the plot of residuals versus fitted values. You do not have to include this plot in your assignment, just comment on what you see.
 
 ```{r diagnostics}
 plot(seed_split_lm)
 ```
+
 The plot of residuals vs. fitted values shows a megaphone shape. This indicates that the assumption of equal variance is violated. We could try a transformation.
