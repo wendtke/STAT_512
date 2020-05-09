@@ -1,0 +1,87 @@
+---
+title: "TITLE"
+subtitle: "SUBTITLE"
+author: "Kathleen Wendt"
+header-includes:
+    - \usepackage{setspace}\doublespacing
+    - \usepackage{indentfirst}
+date: "May 10, 2020"
+output: pdf_document
+indent: true
+---
+
+```{r packages, include = FALSE}
+# load packages
+# library(readxl)
+# library(tidyverse)
+# library(janitor)
+# library(car)
+# library(emmeans)
+```
+
+```{r global_options, include = FALSE}
+# set global options
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+The write-up should be 5 pages or fewer and written in the same style as a journal article, but with more detail and focus on the analysis. 
+
+# Introduction
+
+## Background
+
+## Research question
+
+1.
+
+# Data description
+
+## Observational/experimental units
+
+## Sample size
+
+## Response and predictors
+
+- continuous or categorical (with levels)
+
+## Study design
+
+# Summary statistics and graphics
+
+Typically done BEFORE formal model fitting
+
+I do not expect the graphs to be “publication quality”, but they should be clearly labeled. As a rule, a graph should only be included in a paper if you have something to say about it.
+
+# Analysis
+
+approach from this class: MR, factorial ANOVA, mixed model
+
+2+ predictors with single response variable (running same analysis for multiple response variables will not earn additional credit)
+
+- description/discussion of analysis - reproducible
+
+- justify any decisions (e.g., median-split)
+
+- discuss model assumptions (consider including diagnostic plots)
+
+# Results and conclusions
+
+## Present results
+
+- Type 3 ANOVA table and/or table of estimated coefficients or other tables
+- interpretation and discussion (even if nothing is significant!)
+- address research questions 
+
+# STYLE 
+
+- about 5 pages including graphs but excluding code or references
+- writing quality 
+- clean output (kable tables or in-line coding)
+- code in appendix; congruency between code and description
+
+# Appendix
+
+```{r show_code, ref.label = knitr::all_labels(), echo = TRUE, eval = FALSE}
+```
