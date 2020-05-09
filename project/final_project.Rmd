@@ -1,10 +1,7 @@
 ---
-title: "TITLE"
-subtitle: "SUBTITLE"
-author: "Kathleen Wendt"
-header-includes:
-    - \usepackage{setspace}\doublespacing
-    - \usepackage{indentfirst}
+title: "STAT 512 Final Project"
+subtitle: "Effects of Brief Meditation on Parent Respiratory Sinus Arrhythmia"
+author: "Kathleen E. Wendt"
 date: "May 10, 2020"
 output: pdf_document
 indent: true
@@ -12,41 +9,62 @@ indent: true
 
 ```{r packages, include = FALSE}
 # load packages
-# library(readxl)
-# library(tidyverse)
-# library(janitor)
+library(tidyverse)
 # library(car)
 # library(emmeans)
 ```
 
 ```{r global_options, include = FALSE}
 # set global options
-knitr::opts_chunk$set(echo = FALSE, 
+knitr::opts_chunk$set(fig.width = 6, 
+                      fig.height = 4, 
+                      fig.path = "figs/",
+                      echo = FALSE, 
                       warning = FALSE, 
                       message = FALSE)
 ```
-
-The write-up should be 5 pages or fewer and written in the same style as a journal article, but with more detail and focus on the analysis. 
 
 # Introduction
 
 ## Background
 
+This project is a sliver of my master's thesis, which I will defend in Summer 2020. We conducted a pilot study of a brief mindfulness induction (focused-attention meditation) on self- and co-regulation between parents and young children (ages 4.5 - 6.5) during a challenging dyadic task. The participating families were recruited from a previous longitudinal NIH-funded study of parent-child co-regulation and child maltreatment risk. 
+
 ## Research question
 
-1.
+How does a brief mindfulness meditation affect parents' parasympathetic nervous system activity (indicated by respiratory sinus arrhythmia) during a challenging parent-child interaction, while accounting for parents' prior contemplative experience? 
 
 # Data description
 
-## Observational/experimental units
+The observational unit is a parent (mother or father). The individual parent was randomly assigned to an experimental or control group. This sample contains 40 mothers and 27 fathers, some of whom are married or co-parenting. The response variable is change in respiratory sinus arrhythmia across time.
 
-## Sample size
+The primary predictor is audio condition, which is a categorical variable containing the experimental (1) and control (0) groups. The experimental group listened to a focused attention meditation; whereas the control group listened to an educational podcast about the benefits of sleep.
 
-## Response and predictors
+- Response and predictor variables
+- Identify each variable as continuous or categorical (with levels) 
+- Further details of design
 
-- continuous or categorical (with levels)
+Measures include:
 
-## Study design
+- Demographic information on parent, child, and family with identifying links to previous study (Parenting Young Children Project; PYCP).
+
+- Parent-reported surveys: Parent dispositional mindfulness (Five-Facet Mindfulness Questionnaire; FFMQ), parent symptomatology (Brief Symptom Inventory; BSI 53-item), child behavior (Child Behavior Checklist for young children), and parenting practices (PARTS).
+
+- Random assignment (balancing by child gender, child age, parent gender, parent mental health, and family strengthening activities) of parent to condition for 5.5-min audio recording. Experimental group listened to a focused-attention meditation. Control group listened to a educational podcast about sleep.
+
+- Physiological data: Parent heart rate variability, parent electrodermal activity, and child heart rate variability. Structured in 30-second segments (matching times across biosignals) within each research task, which are labeled sequentially:
+
+1) 3-min dyadic rest
+
+2) 5.5-min audio period (parent only)
+
+3) 4-min Parent-Child Challenge Task (PCCT) "baseline"
+
+4) 3-min PCCT "stressor"
+
+5) 3-min PCCT "repair"
+
+- Affective and behavioral coding to be completed based on the Dyadic Interaction Coding System.
 
 # Summary statistics and graphics
 
@@ -80,6 +98,12 @@ approach from this class: MR, factorial ANOVA, mixed model
 - writing quality 
 - clean output (kable tables or in-line coding)
 - code in appendix; congruency between code and description
+
+# Acknowledgements
+
+Data collection was funded by the Colorado State University Prevention Research Center. This material is based upon work supported by the National Science Foundation Graduate Research Fellowship under Grant No. 006784-00002, awarded to Kathleen E. Wendt.
+
+\newpage
 
 # Appendix
 
