@@ -1,21 +1,13 @@
 ---
 title: "STAT 512 Final Project"
-subtitle: "Effects of Brief Meditation on Parent Respiratory Sinus Arrhythmia"
+subtitle: "Effects of Brief Meditation on Mother Respiratory Sinus Arrhythmia"
 author: "Kathleen E. Wendt"
 date: "May 10, 2020"
 output: pdf_document
-indent: true
 ---
 
-```{r packages, include = FALSE}
-# load packages
-library(tidyverse)
-# library(car)
-# library(emmeans)
-```
-
 ```{r global_options, include = FALSE}
-# set global options
+# set global options for figures, code, warnings, and messages
 knitr::opts_chunk$set(fig.width = 6, 
                       fig.height = 4, 
                       fig.path = "figs/",
@@ -24,84 +16,116 @@ knitr::opts_chunk$set(fig.width = 6,
                       message = FALSE)
 ```
 
+```{r load_packages, include = FALSE}
+# load packages
+library(tidyverse) # for reading and manipulating data
+library(kableExtra) # for tables
+library(nlme) # for repeated measures modeling
+library(emmeans) # for comparing estimated marginal means
+```
+
+```{r prepare_data, include = FALSE}
+# read in treatment assignment data and filter to mothers only
+trt_audio <- readr::read_csv("data/audio_parent.csv") %>%
+  dplyr::filter(individual == 1) # filter to only mothers
+# prepare all data for summaries and models
+rsa_trt_data <- readr::read_csv("data/hrv_parent_valid.csv") %>%
+  dplyr::select(family, individual, task, rsa_mean_task) %>% 
+  dplyr::filter(individual == 1) %>% # filter to only mothers
+  dplyr::distinct() %>% # collapse to distinct observations
+  dplyr::group_by(family) %>% # group by mother id
+  dplyr::mutate(rsa_diff = rsa_mean_task - lag(rsa_mean_task)) %>% # calc diff
+  dplyr::ungroup() %>% # ungroup by mother id
+  dplyr::full_join(trt_audio, by = c("family", "individual")) %>% # trt var
+  dplyr::mutate(task = as.factor(task), # convert time and trt to fct
+                condition = as.factor(condition)) %>% 
+  dplyr::select(-individual) %>% # drop individual label (all mothers)
+  dplyr::rename(mother_id = family) ## rename family id as mother id
+```
+
 # Introduction
 
 ## Background
 
-This project is a sliver of my master's thesis, which I will defend in Summer 2020. We conducted a pilot study of a brief mindfulness induction (focused-attention meditation) on self- and co-regulation between parents and young children (ages 4.5 - 6.5) during a challenging dyadic task. The participating families were recruited from a previous longitudinal NIH-funded study of parent-child co-regulation and child maltreatment risk. 
+This project is a sliver of my master's thesis, which I will defend in June 2020. We conducted a pilot study of a brief mindfulness induction (focused-attention meditation) on self- and co-regulation between parents and young children (ages 4.5 - 6.5) during a challenging dyadic task. My master's thesis investigates the effects of a meditation on parent autonomic nervous system activity during a challenging parenting moment and individual differences in such by prior contemplative experience and dispositional mindfulness. 
 
-## Research question
+## Research Question
 
-How does a brief mindfulness meditation affect parents' parasympathetic nervous system activity (indicated by respiratory sinus arrhythmia) during a challenging parent-child interaction, while accounting for parents' prior contemplative experience? 
+General: How does a mindfulness meditation affect parasympathetic nervous system activity in mothers during a subsequent challenging parent-child interaction? 
 
-# Data description
+Specific: How does the average change in respiratory sinus arrhythmia (response) in mothers (subject/block) differ by treatment group (meditation vs. podcast) across phases of a challenging parenting task (time period)?
 
-The observational unit is a parent (mother or father). The individual parent was randomly assigned to an experimental or control group. This sample contains 40 mothers and 27 fathers, some of whom are married or co-parenting. The response variable is change in respiratory sinus arrhythmia across time.
+# Description
 
-The primary predictor is audio condition, which is a categorical variable containing the experimental (1) and control (0) groups. The experimental group listened to a focused attention meditation; whereas the control group listened to an educational podcast about the benefits of sleep.
+The observational/experimental unit is an individual parent. 
 
-- Response and predictor variables
-- Identify each variable as continuous or categorical (with levels) 
-- Further details of design
+For the purposes of this assignment, I will only consider the subset of mothers (N = 40), but 27 fathers also participated in this study. The blocking variable is subject (mother).
 
-Measures include:
+The response variable is the average change in respiratory sinus arrhythmia (RSA), which is a noninvasive indicator of parasympathetic nervous system activity. RSA is a continuous variable but will be calculated as a difference score from baseline. 
 
-- Demographic information on parent, child, and family with identifying links to previous study (Parenting Young Children Project; PYCP).
+The predictor variables are audio recording as treatment (between-subjects factor) and protocol task as time period (within-subjects factor). Treatment is a categorical variable with two levels: control (0) and experimental (1). Mothers were randomly assigned to a group, balancing for child gender, child age, parent gender, parent mental health, and family strengthening activities. The experimental group listened a focused-attention meditation, whereas the control group listened to an educational podcast about the benefits of sleep for the same duration. Time period is a categorical variable with 5 levels: 3-minute resting period; 5.5-minute audio treatment; 4-minute dyadic challenge (part 1); 3-minute dyadic stressor (part 2); 3-minute dyadic recovery (part 3). When the response is calculated as a difference score from baseline/resting period, only the latter 4 levels will remain.
 
-- Parent-reported surveys: Parent dispositional mindfulness (Five-Facet Mindfulness Questionnaire; FFMQ), parent symptomatology (Brief Symptom Inventory; BSI 53-item), child behavior (Child Behavior Checklist for young children), and parenting practices (PARTS).
+# Summary
 
-- Random assignment (balancing by child gender, child age, parent gender, parent mental health, and family strengthening activities) of parent to condition for 5.5-min audio recording. Experimental group listened to a focused-attention meditation. Control group listened to a educational podcast about sleep.
+```{r mean_rsa_diff_plot}
+# plot mean rsa diff score by time and trt
+rsa_trt_data %>% 
+  dplyr::filter(task != 1) %>% # drop task 1 (empty vector)
+  ggplot(aes(x = task, y = rsa_diff)) + # plot response over time
+  stat_summary(aes(group = condition, color = condition), # mean rsa diff
+               geom = "line", fun = mean) + 
+  theme_bw() + 
+  ggtitle("Mean RSA difference across time and by treatment") 
+```
 
-- Physiological data: Parent heart rate variability, parent electrodermal activity, and child heart rate variability. Structured in 30-second segments (matching times across biosignals) within each research task, which are labeled sequentially:
-
-1) 3-min dyadic rest
-
-2) 5.5-min audio period (parent only)
-
-3) 4-min Parent-Child Challenge Task (PCCT) "baseline"
-
-4) 3-min PCCT "stressor"
-
-5) 3-min PCCT "repair"
-
-- Affective and behavioral coding to be completed based on the Dyadic Interaction Coding System.
-
-# Summary statistics and graphics
-
-Typically done BEFORE formal model fitting
-
-I do not expect the graphs to be “publication quality”, but they should be clearly labeled. As a rule, a graph should only be included in a paper if you have something to say about it.
+```{r rsa_sum_stats}
+# calculate mean rsa difference by task/time period and treatment condition
+rsa_sum_stats <- rsa_trt_data %>%
+  dplyr::filter(task != 1) %>% # drop task 1
+  dplyr::group_by(task, condition) %>% 
+  dplyr::summarize(n = n(), # count obs
+                   mean_rsa_diff = mean(rsa_diff), # mean rsa diff 
+                   sd_rsa_diff = sd(rsa_diff), # sd mean rsa diff
+                   se_rsa_diff = sd_rsa_diff/sqrt(n)) # se mean rsa diff
+# kable table for rsa summary statistics
+kableExtra::kable(rsa_sum_stats) %>% 
+  kable_styling(position = "center")
+```
 
 # Analysis
 
-approach from this class: MR, factorial ANOVA, mixed model
+## Description
 
-2+ predictors with single response variable (running same analysis for multiple response variables will not earn additional credit)
+two-factor repeated measures analysis of variance with difference scores as response
+
+y = rsa difference score
+block = subject (random)
+treatment = audio (fixed)
+time period = task (fixed)
+time*trt interaction
 
 - description/discussion of analysis - reproducible
 
-- justify any decisions (e.g., median-split)
+## Justification
+
+- justify any decisions (model selection)
+
+## Assumptions
 
 - discuss model assumptions (consider including diagnostic plots)
 
-# Results and conclusions
-
-## Present results
+## Results
 
 - Type 3 ANOVA table and/or table of estimated coefficients or other tables
+
+# Conclusions 
+
 - interpretation and discussion (even if nothing is significant!)
 - address research questions 
 
-# STYLE 
-
-- about 5 pages including graphs but excluding code or references
-- writing quality 
-- clean output (kable tables or in-line coding)
-- code in appendix; congruency between code and description
-
 # Acknowledgements
 
-Data collection was funded by the Colorado State University Prevention Research Center. This material is based upon work supported by the National Science Foundation Graduate Research Fellowship under Grant No. 006784-00002, awarded to Kathleen E. Wendt.
+Data collection was funded by the Colorado State University Prevention Research Center. This material is based upon work supported by the National Science Foundation Graduate Research Fellowship under Grant No. 006784-00002, awarded to KEW.
 
 \newpage
 
