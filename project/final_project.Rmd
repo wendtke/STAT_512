@@ -19,6 +19,7 @@ knitr::opts_chunk$set(fig.width = 6,
 ```{r load_packages, include = FALSE}
 # load packages
 library(tidyverse) # for reading and manipulating data
+library(rstatix) # for pipe-friendly stat stuff
 library(kableExtra) # for tables
 library(nlme) # for repeated measures modeling
 library(emmeans) # for comparing estimated marginal means
@@ -27,19 +28,28 @@ library(emmeans) # for comparing estimated marginal means
 ```{r prepare_data, include = FALSE}
 # read in treatment assignment data and filter to mothers only
 trt_audio <- readr::read_csv("data/audio_parent.csv") %>%
-  dplyr::filter(individual == 1) # filter to only mothers
+  dplyr::filter(individual == 1)
+# filter to baseline rsa for each person
+rsa_base <- readr::read_csv("data/hrv_parent_valid.csv") %>%
+  dplyr::select(family, individual, task, rsa_mean_task) %>% 
+  dplyr::filter(individual == 1,
+                task == 1) %>% 
+  dplyr::distinct() %>% 
+  dplyr::select(-individual, -task) %>% 
+  dplyr::rename(rsa_baseline = rsa_mean_task)
 # prepare all data for summaries and models
 rsa_trt_data <- readr::read_csv("data/hrv_parent_valid.csv") %>%
   dplyr::select(family, individual, task, rsa_mean_task) %>% 
-  dplyr::filter(individual == 1) %>% # filter to only mothers
-  dplyr::distinct() %>% # collapse to distinct observations
-  dplyr::group_by(family) %>% # group by mother id
-  dplyr::mutate(rsa_diff = rsa_mean_task - lag(rsa_mean_task)) %>% # calc diff
-  dplyr::ungroup() %>% # ungroup by mother id
-  dplyr::full_join(trt_audio, by = c("family", "individual")) %>% # trt var
-  dplyr::mutate(task = as.factor(task), # convert time and trt to fct
-                condition = as.factor(condition)) %>% 
-  dplyr::select(-individual) %>% # drop individual label (all mothers)
+  dplyr::filter(individual == 1) %>% 
+  dplyr::distinct() %>% 
+  dplyr::left_join(rsa_base, by = "family") %>%
+  dplyr::full_join(trt_audio, by = c("family", "individual")) %>% 
+  dplyr::select(-individual) %>% 
+  dplyr::group_by(family) %>% 
+  dplyr::mutate(rsa_diff = rsa_mean_task - rsa_baseline) %>% 
+  dplyr::filter(task != 1) %>% 
+  dplyr::ungroup() %>% 
+  rstatix::convert_as_factor(family, task, condition) %>% 
   dplyr::rename(mother_id = family) ## rename family id as mother id
 ```
 
@@ -59,73 +69,135 @@ Specific: How does the average change in respiratory sinus arrhythmia (response)
 
 The observational/experimental unit is an individual parent. 
 
-For the purposes of this assignment, I will only consider the subset of mothers (N = 40), but 27 fathers also participated in this study. The blocking variable is subject (mother).
+For the purposes of this assignment, I only considered the subset of mothers (N = 40), but 27 fathers also participated in this study. The blocking variable was subject (unique mother identification as a factor).
 
-The response variable is the average change in respiratory sinus arrhythmia (RSA), which is a noninvasive indicator of parasympathetic nervous system activity. RSA is a continuous variable but will be calculated as a difference score from baseline. 
+The response variable was the average change in respiratory sinus arrhythmia (RSA), which is a noninvasive indicator of parasympathetic nervous system activity. RSA was a continuous variable but will be calculated as a difference score from baseline. 
 
-The predictor variables are audio recording as treatment (between-subjects factor) and protocol task as time period (within-subjects factor). Treatment is a categorical variable with two levels: control (0) and experimental (1). Mothers were randomly assigned to a group, balancing for child gender, child age, parent gender, parent mental health, and family strengthening activities. The experimental group listened a focused-attention meditation, whereas the control group listened to an educational podcast about the benefits of sleep for the same duration. Time period is a categorical variable with 5 levels: 3-minute resting period; 5.5-minute audio treatment; 4-minute dyadic challenge (part 1); 3-minute dyadic stressor (part 2); 3-minute dyadic recovery (part 3). When the response is calculated as a difference score from baseline/resting period, only the latter 4 levels will remain.
+The predictor variables were audio recording as treatment (between-subjects factor) and protocol task as time period (within-subjects factor). Treatment was a categorical variable with two levels: control (0) and experimental (1). Mothers were randomly assigned to a group, balancing for child gender, child age, parent gender, parent mental health, and family strengthening activities. The experimental group listened a focused-attention meditation, whereas the control group listened to an educational podcast about the benefits of sleep for the same duration. Time period was a categorical variable with 5 levels: 3-minute resting period; 5.5-minute audio treatment; 4-minute dyadic challenge (part 1); 3-minute dyadic stressor (part 2); 3-minute dyadic recovery (part 3). After the response is calculated as a difference score from baseline/resting period, only the latter 4 levels remained.
 
 # Summary
 
-```{r mean_rsa_diff_plot}
-# plot mean rsa diff score by time and trt
+```{r sum_stats, include = FALSE}
+# rstatix sum stats
 rsa_trt_data %>% 
-  dplyr::filter(task != 1) %>% # drop task 1 (empty vector)
-  ggplot(aes(x = task, y = rsa_diff)) + # plot response over time
-  stat_summary(aes(group = condition, color = condition), # mean rsa diff
-               geom = "line", fun = mean) + 
-  theme_bw() + 
-  ggtitle("Mean RSA difference across time and by treatment") 
+  dplyr::select(-rsa_mean_task, -rsa_baseline) %>% 
+  dplyr::group_by(task, condition) %>% 
+  rstatix::get_summary_stats() %>% 
+  dplyr::ungroup()
 ```
 
-```{r rsa_sum_stats}
-# calculate mean rsa difference by task/time period and treatment condition
-rsa_sum_stats <- rsa_trt_data %>%
-  dplyr::filter(task != 1) %>% # drop task 1
-  dplyr::group_by(task, condition) %>% 
-  dplyr::summarize(n = n(), # count obs
-                   mean_rsa_diff = mean(rsa_diff), # mean rsa diff 
-                   sd_rsa_diff = sd(rsa_diff), # sd mean rsa diff
-                   se_rsa_diff = sd_rsa_diff/sqrt(n)) # se mean rsa diff
-# kable table for rsa summary statistics
-kableExtra::kable(rsa_sum_stats) %>% 
-  kable_styling(position = "center")
+```{r boxplot}
+# boxplot of mean rsa diff by time and trt
+rsa_trt_data %>% 
+  ggplot(aes(x = task, y = rsa_diff, color = condition)) + 
+  geom_boxplot() +
+  theme_bw() + 
+  ggtitle("Mean RSA change across time by treatment")
 ```
+
+```{r lineplot}
+# line plot mean rsa diff score by time and trt
+rsa_trt_data %>%
+  ggplot(aes(x = task, y = rsa_diff)) + 
+  stat_summary(aes(group = condition, color = condition), 
+               geom = "line", fun = mean) + 
+  theme_bw() + 
+  ggtitle("Mean RSA change across time by treatment") 
+```
+# Pre-analysis assumptions
+
+## Outliers
+
+```{r outliers, include = FALSE}
+rsa_trt_data %>% 
+  dplyr::group_by(condition, task) %>% 
+  rstatix::identify_outliers(rsa_diff)
+```
+
+There are no extreme outlying scores of RSA, based on inter-quartile calculations. 
+
+## Normality
+
+```{r normality, include = FALSE}
+rsa_trt_data %>% 
+  dplyr::group_by(condition, task) %>% 
+  rstatix::shapiro_test(rsa_diff)
+```
+
+Based on the Shapiro-Wilk test, the residuals of the difference scores for RSA by time period (task) and treatment group (condition) are normally distributed.
 
 # Analysis
 
-## Description
+Analysis was executed in `r R.version.string`, using the `nlme` and `emmeans` packages. A balanced two-factor (two-way) repeated measures analysis of variance (ANOVA) was performed to evaluate the effect of treatment across time on mean change in RSA. In order to account for intra-individual variability in RSA, I first calculated a difference score for each individual based on the baseline/resting average RSA. This difference score was then used as the response variable in the model. Fixed effects included treatment (experimental vs. control), time period (audio, 3-part parent-child task), and a treatment*time interaction. Subject (individual mother) was included as a random effect to account for repeated measures.
 
-two-factor repeated measures analysis of variance with difference scores as response
+First, the assumption of compound symmetry was investigated. Three models were fit to be compared using AIC: basic, unstructured covariance, and autogressive covariance approaches. According to AIC, the model with autoregressive covariance fits the data most appropriately.
 
-y = rsa difference score
-block = subject (random)
-treatment = audio (fixed)
-time period = task (fixed)
-time*trt interaction
+estimate/compare means corresponding to fixed effects
 
-- description/discussion of analysis - reproducible
+```{r model1, include = FALSE}
+# MODEL 1: basic/corCompSymm: covariance same across period on same subject
+options(contrasts = c("contr.sum", "contr.poly"))
+model1_basic <- nlme::lme(rsa_diff ~ task*condition,
+                                      random = ~1 | mother_id,
+                                      data = rsa_trt_data)
+summary(model1_basic)
+nlme::anova.lme(model1_basic, type = "marginal")
+emmeans::emmeans(model1_basic, dunnett ~ task|condition)
+emmeans::emmeans(model1_basic, pairwise ~ task|condition)
+```
 
-## Justification
+```{r model2, include = FALSE}
+# MODEL 2: corSymm: unstructured covariance; correlations allowed to differ
+options(contrasts = c("contr.sum", "contr.poly"))
+model2_corsymm <- nlme::lme(rsa_diff ~ task*condition,
+                            random = ~1|mother_id,
+                            correlation = corSymm(form = ~1|mother_id),
+                            data = rsa_trt_data)
+summary(model2_corsymm)
+nlme::getVarCov(model2_corsymm, individual = 1, type = "marginal")
+```
 
-- justify any decisions (model selection)
+```{r model3, include = FALSE}
+# MODEL 3: corAR1: autoregressive covariance; assumes covariance decreases 
+# exp; assumes equal time spacing (violated with different task lengths?)
+options(contrasts = c("contr.sum", "contr.poly"))
+model3_corar1 <- nlme::lme(rsa_diff ~ task*condition,
+                           random = ~1|mother_id,
+                           correlation = corAR1(form = ~1|mother_id),
+                           data = rsa_trt_data)
+summary(model3_corar1)
+nlme::anova.lme(model3_corar1, type = "marginal")
+emmeans::emmeans(model3_corar1, dunnett ~ task|condition)
+emmeans::emmeans(model3_corar1, pairwise ~ condition|task)
+```
 
-## Assumptions
-
-- discuss model assumptions (consider including diagnostic plots)
+```{r compare}
+AIC(model1_basic, model2_corsymm, model3_corar1)
+```
 
 ## Results
 
 - Type 3 ANOVA table and/or table of estimated coefficients or other tables
+
+```{r}
+# # Visualization: box plots with p-values
+# pwc <- pwc %>% add_xy_position(x = "time")
+# bxp +
+#   stat_pvalue_manual(pwc, tip.length = 0, hide.ns = TRUE) +
+#   labs(
+#     subtitle = get_test_label(res.aov, detailed = TRUE),
+#     caption = get_pwc_label(pwc)
+#   )
+```
 
 # Conclusions 
 
 - interpretation and discussion (even if nothing is significant!)
 - address research questions 
 
-# Acknowledgements
+There was a statistically significant interaction between treatment and time on self-esteem score, F(2, 22) = 30.4, p < 0.0001. Therefore, the effect of treatment variable was analyzed at each time point. P-values were adjusted using the Bonferroni multiple testing correction method. The effect of treatment was significant at t2 (p = 0.036) and t3 (p = 0.00051) but not at the time point t1 (p = 1).
 
-Data collection was funded by the Colorado State University Prevention Research Center. This material is based upon work supported by the National Science Foundation Graduate Research Fellowship under Grant No. 006784-00002, awarded to KEW.
+Pairwise comparisons, using paired t-test, show that the mean self-esteem score was significantly different between ctr and Diet trial at time points t2 (p = 0.012) and t3 (p = 0.00017) but not at t1 (p = 0.55).
 
 \newpage
 
