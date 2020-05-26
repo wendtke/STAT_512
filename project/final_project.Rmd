@@ -18,11 +18,10 @@ knitr::opts_chunk$set(fig.width = 6,
 
 ```{r load_packages, include = FALSE}
 # load packages
-library(tidyverse) # for reading and manipulating data
-library(rstatix) # for pipe-friendly stat stuff
-library(kableExtra) # for tables
-library(nlme) # for repeated measures modeling
-library(emmeans) # for comparing estimated marginal means
+library(tidyverse)
+library(rstatix) 
+library(nlme) 
+library(emmeans) 
 ```
 
 ```{r prepare_data, include = FALSE}
@@ -50,7 +49,7 @@ rsa_trt_data <- readr::read_csv("data/hrv_parent_valid.csv") %>%
   dplyr::filter(task != 1) %>% 
   dplyr::ungroup() %>% 
   rstatix::convert_as_factor(family, task, condition) %>% 
-  dplyr::rename(mother_id = family) ## rename family id as mother id
+  dplyr::rename(mother_id = family)
 ```
 
 # Introduction
@@ -69,11 +68,11 @@ Specific: How does the average change in respiratory sinus arrhythmia (response)
 
 The observational/experimental unit is an individual parent. 
 
-For the purposes of this assignment, I only considered the subset of mothers (N = 40), but 27 fathers also participated in this study. The blocking variable was subject (unique mother identification as a factor).
+For the purposes of this assignment, I only considered the subset of mothers (n = 40), but 27 fathers also participated in this study. The blocking variable was subject (unique mother identification as a factor).
 
 The response variable was the average change in respiratory sinus arrhythmia (RSA), which is a noninvasive indicator of parasympathetic nervous system activity. RSA was a continuous variable but will be calculated as a difference score from baseline. 
 
-The predictor variables were audio recording as treatment (between-subjects factor) and protocol task as time period (within-subjects factor). Treatment was a categorical variable with two levels: control (0) and experimental (1). Mothers were randomly assigned to a group, balancing for child gender, child age, parent gender, parent mental health, and family strengthening activities. The experimental group listened a focused-attention meditation, whereas the control group listened to an educational podcast about the benefits of sleep for the same duration. Time period was a categorical variable with 5 levels: 3-minute resting period; 5.5-minute audio treatment; 4-minute dyadic challenge (part 1); 3-minute dyadic stressor (part 2); 3-minute dyadic recovery (part 3). After the response is calculated as a difference score from baseline/resting period, only the latter 4 levels remained.
+The predictor variables were audio recording as treatment (between-subjects factor) and protocol task as time period (within-subjects factor). Treatment was a categorical variable with two levels: control (0) and experimental (1). Mothers were randomly assigned to a group, balancing for child gender, child age, parent gender, parent mental health, and family strengthening activities. The experimental group listened to a focused-attention meditation, whereas the control group listened to an educational podcast about the benefits of sleep for the same duration. Time period was a categorical variable with 5 levels: 3-minute resting period; 5.5-minute audio treatment; 4-minute dyadic challenge (part 1); 3-minute dyadic stressor (part 2); 3-minute dyadic recovery (part 3). After the response was calculated as a difference score from baseline/resting period, only the latter 4 levels remained.
 
 # Summary
 
@@ -100,15 +99,18 @@ rsa_trt_data %>%
 rsa_trt_data %>%
   ggplot(aes(x = task, y = rsa_diff)) + 
   stat_summary(aes(group = condition, color = condition), 
-               geom = "line", fun = mean) + 
+               geom = "line", 
+               fun = mean) + 
   theme_bw() + 
   ggtitle("Mean RSA change across time by treatment") 
 ```
+
 # Pre-analysis assumptions
 
 ## Outliers
 
 ```{r outliers, include = FALSE}
+# check for outliers
 rsa_trt_data %>% 
   dplyr::group_by(condition, task) %>% 
   rstatix::identify_outliers(rsa_diff)
@@ -119,6 +121,7 @@ There are no extreme outlying scores of RSA, based on inter-quartile calculation
 ## Normality
 
 ```{r normality, include = FALSE}
+# check normality of residuals for outcome
 rsa_trt_data %>% 
   dplyr::group_by(condition, task) %>% 
   rstatix::shapiro_test(rsa_diff)
@@ -128,11 +131,9 @@ Based on the Shapiro-Wilk test, the residuals of the difference scores for RSA b
 
 # Analysis
 
-Analysis was executed in `r R.version.string`, using the `nlme` and `emmeans` packages. A balanced two-factor (two-way) repeated measures analysis of variance (ANOVA) was performed to evaluate the effect of treatment across time on mean change in RSA. In order to account for intra-individual variability in RSA, I first calculated a difference score for each individual based on the baseline/resting average RSA. This difference score was then used as the response variable in the model. Fixed effects included treatment (experimental vs. control), time period (audio, 3-part parent-child task), and a treatment*time interaction. Subject (individual mother) was included as a random effect to account for repeated measures.
+Analysis was executed in `r R.version.string`, using the `nlme` and `emmeans` packages. A balanced two-factor (two-way) repeated measures analysis of variance (ANOVA) was performed to evaluate the effect of treatment across time on mean change in RSA. In order to account for intra-individual variability in RSA, I first calculated a difference score for each individual based on the baseline/resting average RSA. This difference score was then used as the response variable in the model. Fixed effects included treatment (experimental vs. control), time period (audio, 3-part parent-child task), and a $treatment*time$ interaction. Subject (individual mother) was included as a random effect to account for repeated measures.
 
 First, the assumption of compound symmetry was investigated. Three models were fit to be compared using AIC: basic, unstructured covariance, and autogressive covariance approaches. According to AIC, the model with autoregressive covariance fits the data most appropriately.
-
-estimate/compare means corresponding to fixed effects
 
 ```{r model1, include = FALSE}
 # MODEL 1: basic/corCompSymm: covariance same across period on same subject
@@ -171,33 +172,41 @@ emmeans::emmeans(model3_corar1, dunnett ~ task|condition)
 emmeans::emmeans(model3_corar1, pairwise ~ condition|task)
 ```
 
-```{r compare}
+```{r compare_aic}
 AIC(model1_basic, model2_corsymm, model3_corar1)
 ```
 
-## Results
+```{r diagnostics}
+# diagnostic plot for model 3: autoregressive covariance structure
+plot(model3_corar1)
+```
 
-- Type 3 ANOVA table and/or table of estimated coefficients or other tables
+The assumption of normally distributed residuals seems to be met.
 
-```{r}
-# # Visualization: box plots with p-values
-# pwc <- pwc %>% add_xy_position(x = "time")
-# bxp +
-#   stat_pvalue_manual(pwc, tip.length = 0, hide.ns = TRUE) +
-#   labs(
-#     subtitle = get_test_label(res.aov, detailed = TRUE),
-#     caption = get_pwc_label(pwc)
-#   )
+```{r model4, include = FALSE}
+# repeated measures with diff score using other package
+model4_diff <- lme4::lmer(rsa_diff ~ condition*task + (1|mother_id),
+                          data = rsa_trt_data)
+summary(model4_diff)
+anova(model4_diff, ddf = "Kenward-Roger")
+emmeans::emmeans(model4_diff, pairwise ~ condition|task)
+```
+
+# Results
+
+```{r anova_table}
+nlme::anova.lme(model3_corar1, type = "marginal")
+```
+
+```{r emmeans}
+emmeans::emmeans(model3_corar1, pairwise ~ condition|task)
 ```
 
 # Conclusions 
 
-- interpretation and discussion (even if nothing is significant!)
-- address research questions 
+There was a statistically significant effect of time period on change in RSA, _F_(3, 114) = 15.9, _p_ < .0001, meaning that RSA change values significantly differed in some way between time periods. The effect of condition on change in RSA was not significant, _F_(1, 38) = 0.09, _p_ = 0.77. There was a statistically significant interaction between treatment and time on change in RSA, _F_(3, 114) = 3.48, _p_ = 0.02. Therefore, the effect of treatment was analyzed at each time point. Based on pairwise comparisons, there were no statistically significant differences in RSA change between condition at each time point.
 
-There was a statistically significant interaction between treatment and time on self-esteem score, F(2, 22) = 30.4, p < 0.0001. Therefore, the effect of treatment variable was analyzed at each time point. P-values were adjusted using the Bonferroni multiple testing correction method. The effect of treatment was significant at t2 (p = 0.036) and t3 (p = 0.00051) but not at the time point t1 (p = 1).
-
-Pairwise comparisons, using paired t-test, show that the mean self-esteem score was significantly different between ctr and Diet trial at time points t2 (p = 0.012) and t3 (p = 0.00017) but not at t1 (p = 0.55).
+The results do not indicate significant differences in RSA change in mothers by treatment across phases of a challenging parent-child task. Based on this analysis, there is no evidence to suggest that the brief mindfulness meditation had an effect on mothers' parasympathetic nervous system activity during a challenging parenting moment.
 
 \newpage
 
